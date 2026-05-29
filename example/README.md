@@ -51,7 +51,7 @@ flutter run -d edge
 
 ---
 
-## 📂 프로젝트 구조 (Directory Structure)
+# 📂 프로젝트 구조 (Directory Structure)
 
 ```
 example/
@@ -68,3 +68,14 @@ example/
 └── test/
     └── widget_test.dart          # 예제 앱 단위 렌더링 연동 스모크 테스트
 ```
+
+---
+
+## ⚠️ 대형 프로젝트에서의 아키텍처 가이드 (Enterprise Best Practices)
+
+대형 프로젝트에서 `getx_distil`을 성공적으로 운용하기 위해 다음 핵심 가이드를 반드시 준수해 주세요:
+
+### 🚨 **Scaffold 전체를 Obx로 감싸지 마세요! (Do not wrap the entire Scaffold in Obx)**
+* **이유**: `Scaffold` 전체를 `Obx`로 감싸게 되면, 하위의 작은 데이터 하나가 변경될 때마다 화면 전체와 그 안의 수많은 정적 위젯(앱바, 드로어, 폼 필드, 텍스트 스타일 등)이 불필요하게 통째로 리빌드(Rebuild)됩니다. 이는 대규모 페이지에서 프레임 드랍(FPS 저하)과 불필요한 CPU 소모를 일으키는 가장 큰 원인입니다.
+* **올바른 사용법**: `Scaffold`와 전체 페이지 골격은 `Obx` 밖에 배치하고, **실제로 값이 바뀌는 최하위 개별 위젯(텍스트, 상태 아이콘, 카운터 보드 등)만 핀포인트로 `Obx`로 감싸서 격리**해야 합니다.
+

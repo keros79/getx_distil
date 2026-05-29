@@ -67,11 +67,15 @@ class GetListenable<T> implements RxInterface<T> {
   }
 
   void reportRead() {
-    Notifier.instance.read(this);
+    if (Notifier.isTracking) {
+      Notifier.instance.read(this);
+    }
   }
 
   void reportAdd(VoidCallback disposer) {
-    Notifier.instance.add(disposer);
+    if (Notifier.isTracking) {
+      Notifier.instance.add(disposer);
+    }
   }
 
   @override
@@ -116,6 +120,10 @@ class Notifier {
   static Notifier? _instance;
   static Notifier get instance => _instance ??= Notifier._();
 
+  // High-performance CPU-friendly fast-path tracking flag
+  static bool isTracking = false;
+  static int _trackingCount = 0;
+
   NotifyData? _notifyData;
 
   void add(VoidCallback listener) {
@@ -133,6 +141,10 @@ class Notifier {
   R append<R>(NotifyData data, R Function() builder) {
     final oldNotifyData = _notifyData;
     _notifyData = data;
+    
+    _trackingCount++;
+    isTracking = true;
+    
     try {
       final result = builder();
       if (data.disposers.isEmpty && data.throwException) {
@@ -141,6 +153,10 @@ class Notifier {
       return result;
     } finally {
       _notifyData = oldNotifyData;
+      _trackingCount--;
+      if (_trackingCount <= 0) {
+        isTracking = false;
+      }
     }
   }
 }
