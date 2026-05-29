@@ -31,6 +31,7 @@ class DashboardPage extends GetView<DashboardController> {
             ),
             onPressed: () => AppConfig.isDarkMode.toggle(),
           ),
+
           IconButton(
             icon: Icon(Icons.settings, color: textColor),
             onPressed: () => context.go('/settings?user=Developer'),
@@ -226,6 +227,35 @@ class DashboardPage extends GetView<DashboardController> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // ─── RxList Benchmark button ──────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00E5FF),
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                onPressed: () => context.go('/bench'),
+                icon: const Icon(Icons.speed_rounded, size: 20),
+                label: Text(
+                  'bench_nav'.tr,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
               ),
             ),
           ],

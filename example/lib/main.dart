@@ -5,6 +5,8 @@ import 'src/views/dashboard_controller.dart';
 import 'src/views/settings_controller.dart';
 import 'src/views/dashboard_page.dart';
 import 'src/views/settings_page.dart';
+import 'src/views/rx_list_bench_controller.dart';
+import 'src/views/rx_list_bench_page.dart';
 
 import 'src/config/app_config.dart';
 
@@ -29,6 +31,7 @@ class AppTranslations extends Translations {
           'dark_desc': 'Vibrant glassmorphism active',
           'light_desc': 'Clean light design active',
           'language_sel': 'Application Language',
+          'bench_nav': 'RxList Benchmark',
         },
         'ko_KR': {
           'dashboard_title': '디스틸 대시보드',
@@ -48,6 +51,7 @@ class AppTranslations extends Translations {
           'dark_desc': '다크 글래스모피즘 테마 활성화',
           'light_desc': '깔끔하고 밝은 라이트 테마 활성화',
           'language_sel': '애플리케이션 언어 선택',
+          'bench_nav': 'RxList 벤치마크',
         }
       };
 }
@@ -87,6 +91,17 @@ class MyApp extends StatelessWidget {
                 Bind<SettingsController>(() => SettingsController(userRole: userRole)),
               ],
               child: const SettingsPage(),
+            );
+          },
+        ),
+        GoRoute(
+          path: '/bench',
+          builder: (context, state) {
+            return BindingWidget(
+              bindings: [
+                Bind<RxListBenchController>(() => RxListBenchController()),
+              ],
+              child: const RxListBenchPage(),
             );
           },
         ),
