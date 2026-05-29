@@ -127,26 +127,3 @@ extension RxnBoolExt on Rx<bool?> {
   }
 }
 
-extension StringExtension on String {
-  RxString get obs => RxString(this);
-}
-
-extension IntExtension on int {
-  RxInt get obs => RxInt(this);
-}
-
-extension DoubleExtension on double {
-  RxDouble get obs => RxDouble(this);
-}
-
-extension BoolExtension on bool {
-  RxBool get obs => RxBool(this);
-}
-
-extension RxT<T extends Object> on T {
-  Rx<T> get obs => Rx<T>(this);
-}
-
-extension RxTnew on Object {
-  Rx<T> obs<T>() => Rx<T>(this as T);
-}

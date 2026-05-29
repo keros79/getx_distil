@@ -1,6 +1,9 @@
 
+// Distilled GetX Core Entry Point - Cache Invalidate
 export 'src/rx/rx_core.dart';
 export 'src/rx/rx_types.dart';
+export 'src/rx/rx_extensions.dart';
+export 'src/rx/workers.dart';
 
 export 'src/state_manager/obx.dart';
 export 'src/state_manager/getx_controller.dart';

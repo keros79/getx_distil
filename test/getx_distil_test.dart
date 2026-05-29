@@ -191,4 +191,42 @@ void main() {
     // Verify onClose was invoked automatically on disposal
     expect(lifecycleController.onCloseCalled, true);
   });
+
+  test('Workers Engine (ever, once, debounce) test', () async {
+    final count = 0.obs;
+    final List<int> everValues = [];
+    final List<int> onceValues = [];
+    final List<int> debounceValues = [];
+
+    // Initialize workers
+    final w1 = ever(count, (val) => everValues.add(val));
+    final w2 = once(count, (val) => onceValues.add(val));
+    final w3 = debounce(count, (val) => debounceValues.add(val), time: const Duration(milliseconds: 50));
+
+    // First change
+    count.value = 1;
+    await Future.delayed(const Duration(milliseconds: 10));
+
+    // Second change
+    count.value = 2;
+    await Future.delayed(const Duration(milliseconds: 10));
+
+    // Third change
+    count.value = 3;
+    await Future.delayed(const Duration(milliseconds: 100)); // Allow debounce to fire after silence
+
+    expect(everValues, [1, 2, 3]);
+    expect(onceValues, [1]); // Only fires on first change
+    expect(debounceValues, [3]); // Only fires on the final change after silence
+
+    // Dispose workers
+    w1.dispose();
+    w2.dispose();
+    w3.dispose();
+
+    // Verify no updates are tracked after disposal
+    count.value = 4;
+    await Future.delayed(const Duration(milliseconds: 100));
+    expect(everValues, [1, 2, 3]); // Remained unchanged
+  });
 }

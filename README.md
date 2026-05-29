@@ -117,6 +117,61 @@ void main() {
 }
 ```
 
+### 4. 반응형 구문 확장 (.obs) 및 워커 (Workers) 활용
+
+`getx_distil`은 편의성을 극대화하는 `.obs` 구문 설탕과 강력한 비동기 흐름 제어 장치인 **워커(Workers)** 엔진을 제공합니다.
+
+#### ⚡ `.obs` 구문 확장 (Syntax Sugar)
+모든 기본 타입 및 사용자 정의 클래스 뒤에 `.obs`를 붙여 즉시 반응형 변수로 선언할 수 있습니다:
+```dart
+final intVal = 10.obs;           // Rx<int> (또는 RxInt)
+final doubleVal = 50.0.obs;      // Rx<double> (또는 RxDouble)
+final stringVal = 'Hello'.obs;   // Rx<String> (또는 RxString)
+final boolVal = true.obs;        // Rx<bool> (또는 RxBool)
+final user = User().obs;         // Rx<User> (사용자 정의 객체)
+```
+
+#### 🛠️ 워커 엔진 (Workers Engine)
+컨트롤러의 `onInit()` 단계 등에서 특정 반응형 변수의 변화 흐름을 감시하여 로직을 트리거할 수 있습니다. 
+
+* **`ever(listener, callback)`**: 변수 값이 바뀔 때마다 **무조건 즉시** 콜백을 가동합니다.
+* **`once(listener, callback)`**: 변수 값이 처음 바뀔 때 **딱 한 번만** 콜백을 실행하고 리스너를 자동 자원 회수합니다.
+* **`debounce(listener, callback, {Duration time})`**: 값 변경 후 특정 대기시간(기본값 800ms) 동안 추가 변경이 없을 때(침묵 상태) 최종적으로 단 한 번만 콜백을 수행합니다. (예: 검색창 자동완성 API 호출 오버헤드 억제)
+
+> [!IMPORTANT]
+> **워커 자원 해제 가이드**:
+> 워커 함수들은 자원 정리를 위한 `Worker` 객체를 반환합니다. 메모리 누수를 완벽히 방지하기 위해, 컨트롤러가 소멸하는 `onClose()` 단계에서 반드시 `.dispose()` 또는 `.cancel()`을 호출해 주세요.
+
+```dart
+class SearchController extends GetxController {
+  final searchQuery = ''.obs;
+  late final Worker _debounceWorker;
+
+  @override
+  void onInit() {
+    super.onInit();
+    
+    // 사용자가 타자를 멈추고 500ms가 지나면 API 검색 실행 (debounce)
+    _debounceWorker = debounce(
+      searchQuery, 
+      (query) => _performSearch(query), 
+      time: const Duration(milliseconds: 500),
+    );
+  }
+
+  void _performSearch(String query) {
+    print('서버 검색 실행: $query');
+  }
+
+  @override
+  void onClose() {
+    // 🚨 워커 리스너를 안전하게 정리하여 메모리 누수 방지
+    _debounceWorker.dispose();
+    super.onClose();
+  }
+}
+```
+
 ---
 
 ## ⚠️ 대형 프로젝트에서의 아키텍처 가이드 (Enterprise Best Practices)
