@@ -32,14 +32,35 @@ class SettingsPage extends GetView<SettingsController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'pref_section'.tr,
-              style: TextStyle(
-                color: themeColor,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'pref_section'.tr,
+                  style: TextStyle(
+                    color: themeColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: themeColor.withAlpha(26),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: themeColor.withAlpha(77)),
+                  ),
+                  child: Text(
+                    'Profile: ${controller.userRole}',
+                    style: TextStyle(
+                      color: themeColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 

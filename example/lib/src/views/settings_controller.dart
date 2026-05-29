@@ -3,6 +3,10 @@ import 'package:getx_distil/get.dart';
 import '../config/app_config.dart';
 
 class SettingsController extends GetxController {
+  final String userRole;
+
+  SettingsController({required this.userRole});
+
   bool get isDarkMode => AppConfig.isDarkMode.value;
 
   String get currentLanguage => Get.locale?.languageCode ?? 'en';

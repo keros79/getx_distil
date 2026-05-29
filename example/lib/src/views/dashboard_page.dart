@@ -33,7 +33,7 @@ class DashboardPage extends GetView<DashboardController> {
           ),
           IconButton(
             icon: Icon(Icons.settings, color: textColor),
-            onPressed: () => context.go('/settings'),
+            onPressed: () => context.go('/settings?user=Developer'),
           ),
         ],
       ),

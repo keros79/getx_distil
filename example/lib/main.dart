@@ -80,10 +80,11 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/settings',
           builder: (context, state) {
+            final userRole = state.uri.queryParameters['user'] ?? 'Guest';
             // Wrap SettingsPage with its own scoped BindingWidget
             return BindingWidget(
               bindings: [
-                Bind<SettingsController>(() => SettingsController()),
+                Bind<SettingsController>(() => SettingsController(userRole: userRole)),
               ],
               child: const SettingsPage(),
             );
