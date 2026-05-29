@@ -53,6 +53,12 @@ void main() {
     expect(flag.isTrue, true);
     flag.toggle();
     expect(flag.isFalse, true);
+
+    // Test nullable callable setter (explicit null assignment)
+    final nullableText = Rxn<String>('initial');
+    expect(nullableText(), 'initial');
+    nullableText(null); 
+    expect(nullableText(), null);
   });
 
   test('Rx updateSequential FIFO Queue Optimization', () async {

@@ -1,12 +1,16 @@
 import 'dart:async';
 import 'rx_core.dart';
 
+class _Omitted {
+  const _Omitted();
+}
+
 abstract class _RxImpl<T> extends GetListenable<T> {
   _RxImpl(super.initial);
 
-  T call([T? v]) {
-    if (v != null) {
-      value = v;
+  T call([dynamic v = const _Omitted()]) {
+    if (v is! _Omitted) {
+      value = v as T;
     }
     return value;
   }

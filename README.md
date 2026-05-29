@@ -46,141 +46,140 @@ dependencies:
 
 ---
 
-## 🛠️ 기본 사용법 (Usage)
+## 🛠️ 기본 사용법 및 구성 요소 가이드 (Usage & Components Guide)
 
-### 1. 반응형 컨트롤러 작성
+`getx_distil`은 오리지널 GetX의 개발 편리성을 최대한 계승하면서도, 위젯 트리 기반의 엄격한 생명주기 관리와 극대화된 렌더링 성능을 보장하도록 각 코어 컴포넌트가 최적화되어 있습니다.
+
+---
+
+### 1. 🎯 Obx & Rx (반응형 상태 관리 및 정밀 리빌드)
+`getx_distil`은 보일러플레이트를 극단적으로 제거한 반응형 프로그래밍을 지원하며, 렌더링 부하를 최소화하도록 코어가 설계되어 있습니다.
+
+* **기본 선언 및 `.obs` 확장**:
+  ```dart
+  final count = 0.obs;             // RxInt (Rx<int>)
+  final user = User().obs;         // Rx<User> (사용자 정의 객체)
+  final name = Rxn<String>();      // nullable Rx (null 허용)
+  ```
+
+#### 📖 값 읽기 / 쓰기 — 두 가지 방식 모두 지원
+
+`getx_distil`은 기존 GetX의 `.value` 방식을 그대로 지원하면서, 더 간결한 **Callable Rx** 방식을 추가로 제공합니다. 어느 쪽을 사용해도 동작은 완전히 동일합니다.
+
+| 동작 | 기존 `.value` 방식 (오리지널 GetX 호환) | Callable 방식 (getx_distil 추가) |
+|------|--------------------------------------|----------------------------------|
+| 읽기 | `count.value` | `count()` |
+| 쓰기 | `count.value = 10` | `count(10)` |
+| null 쓰기 | `name.value = null` | `name(null)` |
+
 ```dart
-import 'package:getx_distil/get.dart';
-
 class CounterController extends GetxController {
   final count = 0.obs;
+  final name = Rxn<String>();
 
-  void increment() {
-    count.value++;
+  void incrementByValue() {
+    // 기존 .value 방식 — 오리지널 GetX와 동일
+    count.value = count.value + 1;
+    name.value = 'Flutter';
+  }
+
+  void incrementByCallable() {
+    // Callable 방식 — 더 간결하게 동일한 동작 수행
+    count(count() + 1);
+    name('Flutter');
   }
 }
 ```
 
-### 2. 뷰 작성 (GetView & 정밀 Obx 최적화)
+#### 💡 오리지널 GetX 대비 핵심 개선점
+* **Callable Rx**: getter/setter를 별도로 선언하지 않고 `count()` / `count(10)` 으로 바로 읽고 씁니다.
+* **Nullable Rx (`Rxn<T>`) null 처리 완벽 지원**: `name(null)` 또는 `name.value = null`로 명시적 null 상태를 안전하게 주입할 수 있습니다.
+* **Fast-Path 플래그를 통한 렌더링 부하 최소화**:
+  * UI 리빌드가 일어나지 않는 일반 비즈니스 로직(연산, 데이터 가공 루프 등) 중에는 반응형 변수를 조회하더라도 복잡한 프록시 및 static 멤버 탐색을 우회하는 **`Notifier.isTracking` 고속 트랙**을 적용하여 연산 부하를 최소화했습니다.
+
+#### 🚨 Obx 사용 시 정밀 리빌드(Targeted Rebuild) 가이드
+* **Scaffold 전체를 Obx로 감싸지 마세요!**: 값이 변하지 않는 정적 UI 뼈대까지 통째로 리빌드되어 프레임 드랍이 발생할 수 있습니다.
+* **올바른 최적화 패턴**: `Scaffold`나 공통 레이아웃은 `Obx` 밖에 배치하고, **실제로 값이 변하는 최하위 개별 위젯만 핀포인트로 `Obx`로 감싸서 격리**해야 합니다.
+
 ```dart
-import 'package:flutter/material.dart';
-import 'package:getx_distil/get.dart';
+// 핀포인트 Obx 예시 — .value 방식과 Callable 방식 모두 Obx 안에서 동작
+Obx(() => Text(
+  '${controller.count.value}',   // .value 방식
+  // 또는: '${controller.count()}' — Callable 방식
+  style: Theme.of(context).textTheme.headlineMedium,
+))
+```
 
-// GetView를 사용하여 자동으로 컨트롤러 의존성을 획득합니다.
-class CounterPage extends GetView<CounterController> {
-  const CounterPage({super.key});
+---
 
-  @override
-  Widget build(BuildContext context) {
-    // Scaffold는 Obx 외부에 배치하여 1회만 그려집니다.
-    return Scaffold(
-      appBar: AppBar(title: const Text('Counter')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            // 값이 변화하는 텍스트 영역만 핀포인트로 Obx 감싸기
-            Obx(() => Text(
-              '${controller.count.value}',
-              style: Theme.of(context).textTheme.headlineMedium,
-            )),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: controller.increment,
-        child: const Icon(Icons.add),
-      ),
+### 2. 🧵 GetView & Scoped DI (의존성 주입 및 뷰)
+전역 싱글톤 중심의 오리지널 GetX와 달리, `getx_distil`은 Flutter 위젯 트리의 스코프를 철저히 따르며 타입 안전한 의존성 주입을 지향합니다.
+
+#### 💡 오리지널 GetX 대비 핵심 개선점 및 차이점
+* **Expando를 통한 Context 캡처 및 스레드 세이프 룩업**:
+  * `GetView<T>` 내부에서 비동기 빌드나 중첩된 `Obx` 빌더 구조 속에서도 타이밍 이슈 없이 정확한 부모 `BindingWidget`의 컨트롤러 인스턴스를 찾을 수 있도록 내부적으로 `Expando<BuildContext>`를 도입하여 스레드 세이프한 생명주기 바인딩을 적용했습니다.
+* **위젯 트리 기반의 자동 생명주기 제어**:
+  * 전역 메모리에 무기한 상주하는 싱글톤 방식과 달리, 페이지(`Route`)가 닫혀 위젯 트리에서 해제되면 해당 스코프를 담당하던 `BindingWidget`에 묶여 있던 컨트롤러들도 **자동으로 `onClose()` 라이프사이클을 수행하며 GC(가비지 컬렉션)에 의해 완전히 수거**됩니다.
+* **생성자 주입 (Constructor Injection) 기반의 Type-Safe DI**:
+  * 오리지널 GetX의 글로벌 지연 주입(`Get.lazyPut`, `Get.put`) 대신, 라우팅 시점(예: `GoRouter` builder)에서 추출한 매개변수를 `Bind` 공장을 통해 **컨트롤러 생성자에 직접 전달(Constructor Injection)**하는 구조를 권장합니다. 이를 통해 컴파일 타임에 완벽한 타입 안전성을 획득할 수 있습니다.
+
+```dart
+// GoRouter 쿼리 파라미터를 컨트롤러 생성자에 직접 안전하게 주입
+GoRoute(
+  path: '/settings',
+  builder: (context, state) {
+    final userRole = state.uri.queryParameters['user'] ?? 'Guest';
+    return BindingWidget(
+      bindings: [
+        Bind<SettingsController>(() => SettingsController(userRole: userRole)),
+      ],
+      child: const SettingsPage(),
     );
-  }
-}
+  },
+)
 ```
 
-### 3. 라우터 및 의존성 주입 설정 (`BindingWidget`)
-```dart
-import 'package:flutter/material.dart';
-import 'package:getx_distil/get.dart';
+---
 
-void main() {
-  runApp(
-    GetMaterialApp(
-      home: BindingWidget(
-        bindings: [
-          // 스코프 내에서 사용할 의존성을 레이지 바인딩
-          Bind<CounterController>(() => CounterController()),
-        ],
-        child: const CounterPage(),
-      ),
-    ),
-  );
-}
-```
+### 3. 🛠️ Worker (비동기 흐름 제어 및 자원 관리)
+컨트롤러 생명주기 동안 특정 반응형 변수의 변화를 감지하여 비동기 또는 비즈니스 로직을 제어하는 강력한 워커 엔진을 제공합니다.
 
-### 4. 반응형 구문 확장 (.obs) 및 워커 (Workers) 활용
-
-`getx_distil`은 편의성을 극대화하는 `.obs` 구문 설탕과 강력한 비동기 흐름 제어 장치인 **워커(Workers)** 엔진을 제공합니다.
-
-#### ⚡ `.obs` 구문 확장 (Syntax Sugar)
-모든 기본 타입 및 사용자 정의 클래스 뒤에 `.obs`를 붙여 즉시 반응형 변수로 선언할 수 있습니다:
-```dart
-final intVal = 10.obs;           // Rx<int> (또는 RxInt)
-final doubleVal = 50.0.obs;      // Rx<double> (또는 RxDouble)
-final stringVal = 'Hello'.obs;   // Rx<String> (또는 RxString)
-final boolVal = true.obs;        // Rx<bool> (또는 RxBool)
-final user = User().obs;         // Rx<User> (사용자 정의 객체)
-```
-
-#### 🛠️ 워커 엔진 (Workers Engine)
-컨트롤러의 `onInit()` 단계 등에서 특정 반응형 변수의 변화 흐름을 감시하여 로직을 트리거할 수 있습니다. 
-
-* **`ever(listener, callback)`**: 변수 값이 바뀔 때마다 **무조건 즉시** 콜백을 가동합니다.
+* **`ever(listener, callback)`**: 변수 값이 바뀔 때마다 **무조건 즉시** 콜백을 실행합니다.
 * **`once(listener, callback)`**: 변수 값이 처음 바뀔 때 **딱 한 번만** 콜백을 실행하고 리스너를 자동 자원 회수합니다.
-* **`debounce(listener, callback, {Duration time})`**: 값 변경 후 특정 대기시간(기본값 800ms) 동안 추가 변경이 없을 때(침묵 상태) 최종적으로 단 한 번만 콜백을 수행합니다. (예: 검색창 자동완성 API 호출 오버헤드 억제)
+* **`debounce(listener, callback, {Duration time})`**: 값 변경 후 특정 대기시간(기본값 800ms) 동안 추가 변경이 없을 때(침묵 상태) 최종적으로 단 한 번만 콜백을 수행합니다. (예: 검색창 자동완성 API 호출 디바운싱)
 
-> [!IMPORTANT]
-> **워커 자원 해제 가이드**:
-> 워커 함수들은 자원 정리를 위한 `Worker` 객체를 반환합니다. 메모리 누수를 완벽히 방지하기 위해, 컨트롤러가 소멸하는 `onClose()` 단계에서 반드시 `.dispose()` 또는 `.cancel()`을 호출해 주세요.
+#### 💡 오리지널 GetX 대비 핵심 개선점 및 차이점
+* **명시적 리소스 해제 필수화 (Disposer 반환)**:
+  * 모든 워커는 백그라운드에서 스트림 리스너를 감시하므로, 메모리 누수를 완전히 방지하기 위해 컨트롤러가 소멸하는 `onClose()` 단계에서 반드시 반환된 `Worker` 객체의 `.dispose()` 또는 `.cancel()`을 호출해 정리해 주어야 합니다.
 
 ```dart
 class SearchController extends GetxController {
   final searchQuery = ''.obs;
-  late final Worker _debounceWorker;
+  late final Worker _searchWorker;
 
   @override
   void onInit() {
     super.onInit();
     
-    // 사용자가 타자를 멈추고 500ms가 지나면 API 검색 실행 (debounce)
-    _debounceWorker = debounce(
+    // 디바운스 워커 등록
+    _searchWorker = debounce(
       searchQuery, 
-      (query) => _performSearch(query), 
+      (query) => _fetchSearchResults(query), 
       time: const Duration(milliseconds: 500),
     );
   }
 
-  void _performSearch(String query) {
-    print('서버 검색 실행: $query');
+  void _fetchSearchResults(String query) {
+    print('서버 API 요청 송신: $query');
   }
 
   @override
   void onClose() {
-    // 🚨 워커 리스너를 안전하게 정리하여 메모리 누수 방지
-    _debounceWorker.dispose();
+    _searchWorker.dispose(); // 🚨 워커 리스너 해제로 메모리 누수 완벽 차단!
     super.onClose();
   }
 }
 ```
-
----
-
-## ⚠️ 대형 프로젝트에서의 아키텍처 가이드 (Enterprise Best Practices)
-
-대형 프로젝트에서 `getx_distil`을 성공적으로 운용하기 위해 다음 핵심 가이드를 반드시 준수해 주세요:
-
-### 🚨 **Scaffold 전체를 Obx로 감싸지 마세요! (Do not wrap the entire Scaffold in Obx)**
-* **이유**: `Scaffold` 전체를 `Obx`로 감싸게 되면, 하위의 작은 데이터 하나가 변경될 때마다 화면 전체와 그 안의 수많은 정적 위젯(앱바, 드로어, 폼 필드, 텍스트 스타일 등)이 불필요하게 통째로 리빌드(Rebuild)됩니다. 이는 대규모 페이지에서 프레임 드랍(FPS 저하)과 불필요한 CPU 소모를 일으키는 가장 큰 원인입니다.
-* **올바른 사용법**: `Scaffold`와 전체 페이지 골격은 `Obx` 밖에 배치하고, **실제로 값이 바뀌는 최하위 개별 위젯(텍스트, 상태 아이콘, 카운터 보드 등)만 핀포인트로 `Obx`로 감싸서 격리**해야 합니다.
 
 ---
 
