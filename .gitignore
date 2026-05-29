@@ -1,0 +1,65 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+desktop.ini
+Thumbs.db
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code related
+# Keep launch.json for debugging but ignore user-specific settings, state and other workspace configurations
+.vscode/*
+!.vscode/launch.json
+
+# Flutter/Dart/Pub related
+# Libraries should not include pubspec.lock, per https://dart.dev/guides/libraries/private-files#pubspeclock.
+/pubspec.lock
+**/doc/api/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+/build/
+/coverage/
+
+# Local Environment Variables
+.env
+.env.*
+*.env
+
+# Android Specific
+**/android/local.properties
+**/android/key.properties
+**/*.keystore
+**/*.jks
+**/.cxx/
+**/android/.gradle/
+
+# iOS/macOS Specific
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/macos/Flutter/ephemeral/
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Windows Specific
+**/windows/flutter/ephemeral/
+
+# Linux Specific
+**/linux/flutter/ephemeral/
+

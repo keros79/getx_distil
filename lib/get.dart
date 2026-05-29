@@ -1,0 +1,13 @@
+
+export 'src/rx/rx_core.dart';
+export 'src/rx/rx_types.dart';
+
+export 'src/state_manager/obx.dart';
+export 'src/state_manager/getx_controller.dart';
+export 'src/state_manager/get_view.dart';
+export 'src/state_manager/translations.dart';
+export 'src/state_manager/get_material_app.dart';
+
+export 'src/instance/bind.dart';
+export 'src/instance/binding_widget.dart';
+export 'src/instance/get_find.dart';
