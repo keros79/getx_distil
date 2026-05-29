@@ -291,6 +291,139 @@ for (int i = 0; i < 100; i++) {
 
 ---
 
+### 5. 🏛️ GetxService (영구 보존 글로벌 서비스)
+
+`GetxService`는 `GetxController`와 동일하게 `GetLifeCycleMixin`을 상속받지만, 위젯 트리의 디스포즈(Dispose) 주기와 연동되지 않고 메모리에 계속 상주하는 **영구 보존 서비스(Immortal Service)**를 만들 때 사용됩니다.
+
+#### 💡 GetxController와의 핵심 차이점
+* **자동 소멸(GC) 대상 제외**: 일반 `GetxController`는 자신을 인스턴스화한 `BindingWidget`이 트리에서 언마운트(Unmount)될 때 자동으로 `onClose()`가 호출되고 소멸하지만, `GetxService`는 해당 스코프 위젯이 소멸하더라도 메모리에서 해제되지 않고 글로벌 정적 영역에 유지됩니다.
+* **적용 사례**: 로컬 데이터베이스 초기화(SQLite/Hive 등), 사용자 로그인 세션 상태를 유지하는 인증 서비스(AuthService), 공통 API 클라이언트 등 애플리케이션의 시작부터 끝까지 유지되어야 하는 백그라운드 성격의 모듈에 가장 이상적입니다.
+
+#### 📌 사용 방법
+```dart
+// 1. GetxService 상속을 통한 영구 서비스 정의
+class DatabaseService extends GetxService {
+  bool _isConnected = false;
+
+  Future<void> initDatabase() async {
+    // DB 연결 및 스키마 초기화 로직
+    _isConnected = true;
+    print('데이터베이스 연결 완료');
+  }
+
+  @override
+  void onClose() {
+    // GetxService는 앱 종료 시점 전까지 자동 호출되지 않습니다.
+    super.onClose();
+  }
+}
+```
+
+```dart
+// 2. 최상위 또는 필요한 위젯 트리 스코프에 바인딩
+BindingWidget(
+  bindings: [
+    Bind<DatabaseService>(() => DatabaseService()),
+  ],
+  child: const MyApp(),
+)
+```
+
+```dart
+// 3. 앱 내 어디서든 주입 및 사용
+// 화면 전환으로 인해 BindingWidget이 소멸되어도 DatabaseService는 메모리에 계속 생존하여 상태를 유지합니다.
+final db = Get.find<DatabaseService>(context);
+```
+
+---
+
+### 6. 🔄 StateMixin & RxStatus (선언형 비동기 상태 분기)
+
+`StateMixin<T>`는 컨트롤러에 쉽게 장착하여 **로딩(Loading), 성공(Success), 데이터 없음(Empty), 에러(Error)**와 같은 대표적인 비동기 API 요청 상태를 직관적으로 제어하고, UI 단에서 보일러플레이트 코드 없이 아름다운 화면 분기를 렌더링할 수 있도록 돕는 고성능 선언형 인터페이스입니다.
+
+#### 💡 오리지널 GetX 대비 핵심 개선점
+* **원천적인 최적화**: 기존 GetX의 복잡하고 무거운 중첩 스트림 대신, `getx_distil` 고유의 초경량 `Obx` 리빌드 파이프라인을 바탕으로 상태가 전환될 때만 극도로 미세하게 타겟 위젯을 다시 그립니다.
+* **직관적인 `change` 메서드**: 상태(`state`) 데이터와 진행 상태(`status`)를 아토믹하게 원자적으로 변경하는 단일 통로를 제공하여 상태 엉킴을 원천 방지합니다.
+
+#### 📌 `RxStatus` 제공 상태
+* `RxStatus.loading()`: 비동기 작업이 아직 수행 중인 상태.
+* `RxStatus.success()`: 비동기 작업이 성공하고 결과 데이터가 유효한 상태.
+* `RxStatus.empty()`: 성공했으나 반환된 데이터가 비어 있는 상태.
+* `RxStatus.error(message)`: 작업 중 예외가 발생한 에러 상태 (에러 메시지 포함).
+
+#### 📌 사용 방법
+
+##### 1. 컨트롤러에 `StateMixin<T>` 주입
+```dart
+class ApiController extends GetxController with StateMixin<String> {
+  final ApiRepository repository;
+
+  ApiController(this.repository);
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchUserData();
+  }
+
+  void fetchUserData() async {
+    // 1. Loading 상태로 변경
+    change(null, status: RxStatus.loading());
+
+    try {
+      final result = await repository.getUserData();
+      
+      if (result == null || result.isEmpty) {
+        // 2. Empty 상태로 변경
+        change(null, status: RxStatus.empty());
+      } else {
+        // 3. Success 상태 및 데이터 주입
+        change(result, status: RxStatus.success());
+      }
+    } catch (e) {
+      // 4. Error 상태 및 메시지 주입
+      change(null, status: RxStatus.error(e.toString()));
+    }
+  }
+}
+```
+
+##### 2. 뷰에서 `obx()`를 이용한 선언형 UI 매핑
+UI 레이어에서 지저분한 `if (isLoading) ... else if (isError) ...` 같은 조건문을 작성할 필요 없이, `obx()` 메서드를 호출하여 상태별 화면을 깨끗하게 바인딩합니다.
+
+```dart
+class UserProfilePage extends GetView<ApiController> {
+  const UserProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('사용자 프로필')),
+      body: controller.obx(
+        // [Success] 데이터가 준비되었을 때 렌더링할 뷰
+        (state) => Center(
+          child: Text('데이터 로드 성공: $state', style: const TextStyle(fontSize: 18)),
+        ),
+        // [Loading] 로딩 중 (기본값: CircularProgressIndicator)
+        onLoading: const Center(
+          child: CircularProgressIndicator(color: Colors.deepPurple),
+        ),
+        // [Empty] 데이터가 비어 있을 때 (기본값: SizedBox.shrink)
+        onEmpty: const Center(
+          child: Text('표시할 사용자 정보가 없습니다.'),
+        ),
+        // [Error] 에러 발생 시 (기본값: 에러 텍스트 표시)
+        onError: (error) => Center(
+          child: Text('에러 발생: $error', style: const TextStyle(color: Colors.red)),
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
 ## 📁 예제 애플리케이션 (`.\example`)
 더욱 고도화된 실제 활용 방법은 `example` 디렉토리에 정의된 **글래스모피즘 주식 대시보드** 앱에서 확인하실 수 있습니다.
 - **실시간 가격 피드 디스플레이** (고주파 FIFO 스트림 시연)
