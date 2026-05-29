@@ -34,6 +34,28 @@ class LifecycleController extends GetxController {
   }
 }
 
+class DatabaseService extends GetxService {
+  bool onCloseCalled = false;
+
+  @override
+  void onClose() {
+    onCloseCalled = true;
+    super.onClose();
+  }
+}
+
+class RegularController extends GetxController {
+  bool onCloseCalled = false;
+
+  @override
+  void onClose() {
+    onCloseCalled = true;
+    super.onClose();
+  }
+}
+
+class ApiController extends GetxController with StateMixin<String> {}
+
 void main() {
   test('Rx Core Getter, Setter & Callable features', () {
     final count = 10.obs;
@@ -457,6 +479,96 @@ void main() {
 
     expect(notifyCount, 1);
     expect(list.rawList, [1, 2]);
+  });
+
+  // ─── GetxService & StateMixin Tests ────────────────────────────────────────
+
+  testWidgets('GetxService behaves as an Immortal Service across widget disposal', (WidgetTester tester) async {
+    final dbService = DatabaseService();
+    final regularController = RegularController();
+    bool showScope = true;
+
+    late StateSetter setScopeState;
+
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: StatefulBuilder(
+          builder: (context, setState) {
+            setScopeState = setState;
+            if (!showScope) return const SizedBox.shrink();
+
+            return BindingWidget(
+              bindings: [
+                Bind<DatabaseService>(() => dbService),
+                Bind<RegularController>(() => regularController),
+              ],
+              child: Builder(
+                builder: (context) {
+                  // Resolve them to instantiate
+                  Get.find<DatabaseService>(context);
+                  Get.find<RegularController>(context);
+                  return const Text('Active DI Scope');
+                },
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.pump();
+    expect(dbService.onCloseCalled, false);
+    expect(regularController.onCloseCalled, false);
+
+    // Pop/dispose the BindingWidget scope
+    setScopeState(() {
+      showScope = false;
+    });
+    await tester.pump();
+
+    // RegularController must be garbage collected and onClose called
+    expect(regularController.onCloseCalled, true);
+
+    // GetxService MUST skip garbage collection and onClose should NOT be called
+    expect(dbService.onCloseCalled, false);
+
+    // Get.find (or getImmortal) must still be able to retrieve it safely
+    expect(BindingWidgetState.getImmortal<DatabaseService>(), dbService);
+  });
+
+  testWidgets('StateMixin.obx renders correct loading, success, error, and empty states', (WidgetTester tester) async {
+    final apiController = ApiController();
+
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: apiController.obx(
+          (state) => Text('Success: $state'),
+          onLoading: const Text('Loading View'),
+          onError: (err) => Text('Error: $err'),
+          onEmpty: const Text('Empty View'),
+        ),
+      ),
+    );
+
+    // Initially in Loading status
+    expect(find.text('Loading View'), findsOneWidget);
+
+    // Change to Success status
+    apiController.change('Fetched Data', status: RxStatus.success());
+    await tester.pump();
+    expect(find.text('Success: Fetched Data'), findsOneWidget);
+
+    // Change to Error status
+    apiController.change(null, status: RxStatus.error('Failed to load'));
+    await tester.pump();
+    expect(find.text('Error: Failed to load'), findsOneWidget);
+
+    // Change to Empty status
+    apiController.change(null, status: RxStatus.empty());
+    await tester.pump();
+    expect(find.text('Empty View'), findsOneWidget);
   });
 }
 

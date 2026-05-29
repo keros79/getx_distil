@@ -31,12 +31,23 @@ class BindingWidget extends StatefulWidget {
 
 class BindingWidgetState extends State<BindingWidget> {
   final Map<Type, Object> _instances = {};
+  static final Map<Type, Object> _immortalInstances = {};
+
+  static T? getImmortal<T>() {
+    if (_immortalInstances.containsKey(T)) {
+      return _immortalInstances[T] as T?;
+    }
+    return null;
+  }
 
   bool hasBinding<T>() {
-    return widget.bindings.any((b) => b.type == T);
+    return _immortalInstances.containsKey(T) || widget.bindings.any((b) => b.type == T);
   }
 
   T getInstance<T>() {
+    if (_immortalInstances.containsKey(T)) {
+      return _immortalInstances[T] as T;
+    }
     if (_instances.containsKey(T)) {
       return _instances[T] as T;
     }
@@ -47,7 +58,11 @@ class BindingWidgetState extends State<BindingWidget> {
     );
 
     final instance = bind.factory();
-    _instances[T] = instance;
+    if (instance is GetxService) {
+      _immortalInstances[T] = instance;
+    } else {
+      _instances[T] = instance;
+    }
 
     if (instance is GetLifeCycleMixin) {
       instance.onStart();
@@ -60,6 +75,7 @@ class BindingWidgetState extends State<BindingWidget> {
   void dispose() {
     for (final instance in _instances.values) {
       if (instance is GetLifeCycleMixin) {
+        if (instance is GetxService) continue;
         instance.onDelete();
       }
     }

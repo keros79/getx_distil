@@ -24,6 +24,11 @@ class Get {
   }
 
   static T find<T>(BuildContext context) {
+    final immortal = BindingWidgetState.getImmortal<T>();
+    if (immortal != null) {
+      return immortal;
+    }
+
     InheritedBinding? foundBinding;
     InheritedElement? foundElement;
 

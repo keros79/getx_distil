@@ -11,6 +11,7 @@ export 'src/state_manager/getx_controller.dart';
 export 'src/state_manager/get_view.dart';
 export 'src/state_manager/translations.dart';
 export 'src/state_manager/get_material_app.dart';
+export 'src/state_manager/state_mixin.dart';
 
 export 'src/instance/bind.dart';
 export 'src/instance/binding_widget.dart';
