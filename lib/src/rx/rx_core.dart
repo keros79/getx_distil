@@ -27,6 +27,15 @@ class GetListenable<T> implements RxInterface<T> {
   GetListenable(this._value);
   T _value;
 
+  /// Unguarded accessor for subclasses — bypasses [reportRead] and the
+  /// equality guard so that mutations can be applied directly to the backing
+  /// value before routing through [refresh].
+  @protected
+  T get internalValue => _value;
+
+  @protected
+  set internalValue(T v) => _value = v;
+
   StreamController<T>? _controller;
   final List<GetStateUpdate> _updaters = [];
 
@@ -63,6 +72,17 @@ class GetListenable<T> implements RxInterface<T> {
     final list = List<GetStateUpdate>.from(_updaters);
     for (final updater in list) {
       updater();
+    }
+  }
+
+  /// Emits the current [_value] to the broadcast stream **only if** the
+  /// stream controller already exists (i.e. a consumer called [listen] or
+  /// accessed [stream]). Safe to call when no workers are active — it is a
+  /// no-op in that case and avoids creating the controller unnecessarily.
+  @protected
+  void notifyStream() {
+    if (_controller != null) {
+      _controller!.add(_value);
     }
   }
 

@@ -30,6 +30,11 @@
 ### 6. ⚡ Fast-Path 플래그를 통한 렌더링 부하 최소화
 - UI 빌드가 일어나지 않는 일반 비즈니스 로직(연산 루프, 데이터 갱신) 중에는 반응형 변수를 조회(`reportRead`)하더라도 복잡한 프록시 및 static 멤버 탐색을 원천 우회하는 **정적 부울 플래그(`Notifier.isTracking`) 고속 트랙**을 적용하여 연산 부하를 최소화하였습니다.
 
+### 7. 📋 고성능 반응형 리스트 (`RxList` — Dirty-Flag Auto-Batching)
+- `List<E>`와 완전히 동일한 API(`add`, `remove`, `sort`, `assignAll` 등)를 사용하면서, 동일 동기 이벤트 내 발생한 **N번의 변이를 자동으로 1회의 Obx 리빌드로 압축**합니다.
+- 오리지널 GetX의 고주파 쓰기 문제(루프 100회 → 리빌드 100회)를 **더티 플래그 + 마이크로태스크 파이프라인**으로 완전 해결하였습니다.
+- `ever`, `once`, `debounce` 워커와 완벽 호환되며, `sort()` / `shuffle()` 등 내부 스왑 연산 역시 단 1회의 알림만 발생합니다.
+
 ---
 
 ## 📦 시작하기 (Getting Started)
@@ -180,6 +185,109 @@ class SearchController extends GetxController {
   }
 }
 ```
+
+---
+
+### 4. 📋 RxList (고성능 반응형 리스트)
+
+`RxList<E>`는 Dart 표준 `List<E>` API를 그대로 유지하면서, 고주파 쓰기 연산 시 발생하는 불필요한 UI 리빌드를 **Dirty-Flag + 마이크로태스크 자동 배칭(Auto-Batching)** 으로 원천 차단합니다.
+
+#### 🚨 오리지널 GetX의 문제점
+
+오리지널 GetX의 `RxList`는 루프 내 매 변이마다 즉시 `update()`를 호출하여 UI 리빌드를 폭발적으로 증가시킵니다.
+
+```dart
+// ❌ 오리지널 GetX — 루프 100회 = Obx 리빌드 100회 발생
+for (final item in newItems) {
+  rxList.add(item); // 매 호출마다 즉시 rebuild 발생!
+}
+```
+
+#### ✅ getx_distil의 해결 방식
+
+`getx_distil`의 `RxList`는 첫 번째 변이 시 마이크로태스크를 **단 1회** 예약합니다. 같은 동기 실행 구간 안의 이후 변이들은 더티 플래그로 인해 중복 예약이 차단되고, 동기 코드가 모두 끝난 후 마이크로태스크가 파이어되어 Obx에 정확히 **1회** 알림을 전달합니다.
+
+```
+동기 실행 구간:
+  list.add(a)  → _isNotificationScheduled=false → true로 세팅, 마이크로태스크 예약
+  list.add(b)  → _isNotificationScheduled=true  → 즉시 반환 (중복 차단)
+  list.add(c)  → _isNotificationScheduled=true  → 즉시 반환 (중복 차단)
+  ...(N번 반복)
+--- 동기 구간 종료 ---
+[마이크로태스크 파이어]
+  refresh()       → Obx 리빌드 1회
+  notifyStream()  → ever/once/debounce 콜백 1회
+  _isNotificationScheduled = false  → 다음 버스트 준비 완료
+```
+
+#### 📌 선언 및 사용법
+
+`.obs`를 리스트에 붙이면 `RxList<E>`가 반환됩니다. 기존 `List` API를 그대로 사용합니다.
+
+```dart
+class ItemController extends GetxController {
+  // List<E>.obs → RxList<E> 반환 (RxT<T> on T 보다 더 구체적인 확장이 우선 적용)
+  final items = <String>[].obs;
+
+  // 루프 100회 → Obx 리빌드 정확히 1회
+  void loadAll(List<String> data) {
+    for (final s in data) {
+      items.add(s);
+    }
+  }
+
+  // 전체 교체 — assignAll도 단 1회 알림
+  void refresh(List<String> fresh) {
+    items.assignAll(fresh);
+  }
+
+  // sort / shuffle — ListMixin 기본 구현([]= 반복)을 override하여 1회만 알림
+  void sortAZ() => items.sort();
+}
+```
+
+```dart
+// 위젯에서는 기존과 동일하게 사용
+Obx(() => ListView.builder(
+  itemCount: items.length,
+  itemBuilder: (_, i) => Text(items[i]),
+))
+```
+
+#### 🔧 주요 메서드 일람
+
+| 메서드 | 동작 | 알림 횟수 |
+|--------|------|----------|
+| `add(e)` | 항목 추가 | 1회 (배칭) |
+| `addAll(iter)` | 다수 항목 추가 | 1회 (배칭) |
+| `remove(e)` | 항목 제거 (변경 시에만) | 0~1회 |
+| `removeAt(i)` | 인덱스 제거 | 1회 |
+| `clear()` | 전체 삭제 (비어 있으면 생략) | 0~1회 |
+| `assignAll(iter)` | 전체 교체 (clear + addAll) | 1회 (배칭) |
+| `list[i] = v` | 인덱스 치환 | 1회 (배칭) |
+| `sort([compare])` | 정렬 | 1회 (`[]=` 반복 차단) |
+| `shuffle([random])` | 무작위 섞기 | 1회 (`[]=` 반복 차단) |
+| `length = n` | 길이 변경 (동일 길이면 생략) | 0~1회 |
+| `rawList` | 배킹 리스트 직접 접근 (알림 없음) | 0회 |
+| `value` | 전체 리스트 반환 + 의존성 등록 | — |
+
+#### 🔗 Worker 연동
+
+`ever`, `once`, `debounce` 워커는 `RxList`의 스트림과 완벽하게 연동됩니다. 배칭이 완료된 후 단 **1회** 콜백을 수신합니다.
+
+```dart
+// 리스트 변경 후 단 1회 ever 콜백 수신 (배치된 버스트 전체가 1회로 묶임)
+final w = ever(items, (list) {
+  print('변경 후 항목 수: ${list.length}');
+});
+
+// 100번 add해도 ever 콜백은 1회만 호출됨
+for (int i = 0; i < 100; i++) {
+  items.add('item_$i');
+}
+```
+
+> **🔔 스트림 타이밍 참고:** `ever` 콜백은 마이크로태스크 2단계(배칭 flush → 브로드캐스트 스트림 전달) 후 수신됩니다. `await Future.microtask(() {})` 를 두 번 await하거나 `await Future.delayed(Duration.zero)`를 사용하면 테스트에서 콜백 수신을 보장할 수 있습니다.
 
 ---
 
