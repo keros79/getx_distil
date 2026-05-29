@@ -13,16 +13,31 @@
 - 오버헤드 없는 옵저버블 바인딩 및 변경 감지 메커니즘.
 
 ### 2. 🛡️ FIFO 비동기 파이프라인 (`updateSequential`)
-- `Rx` 변수에 대한 급격하고 빈번한 비동기 업데이트 상황에서 상태 역전(State Inversion) 및 레이스 컨디션(Race Condition)을 방지하기 위해 **순차적 비동기 대기열(FIFO Queue)**을 기본 제공합니다.
-- 데이터 버스트 상황에서도 최신 상태가 순서대로 안전하게 화면에 반영됩니다.
+- 고주파 비동기 상태 업데이트 상황에서 상태 역전(State Inversion) 및 레이스 컨디션(Race Condition)을 방지하는 비동기 순차 대기열(FIFO Queue)을 제공합니다.
+- **적용 방식 및 권장 상황**:
+  - **`rx.value = newPrice` 또는 `rx(newPrice)` (동기식 할당)**: 덮어쓰기 형태의 단순 조회 데이터 처리에 사용하여 대기열 지연(밀림) 현상 없이 최고의 실시간성을 확보할 때 사용합니다.
+  - **`rx.updateSequential((current) async => ...)` (비동기 파이프라인)**: 이전 상태값을 바탕으로 순차적인 비동기 계산이나 API/DB 트랜잭션 처리가 일관되게 보장되어야 할 때 사용합니다.
 
 ### 3. 🎯 핀포인트 최적화 반응형 위젯 (`Obx`)
 - Scaffold 전체를 다시 그리는 무거운 설계 대신, **상태가 실제로 바뀌는 최하위 개별 위젯만 정밀하게 다시 그리도록** 유도합니다.
 - 위젯 트리가 업데이트될 때 사용되지 않는 관찰 대상(Observable)을 자동으로 해제하여 메모리 누수를 완벽하게 방지합니다.
+- **기본 사용 예시**:
+  ```dart
+  Obx(() => Text('카운트: ${controller.count()}')) // Callable 방식
+  // 또는: Obx(() => Text('카운트: ${controller.count.value}')) // 오리지널 GetX 호환 방식
+  ```
 
 ### 4. 🌳 트리 스코프 DI 엔진 (`BindingWidget` & `Get.find`)
 - 전역 싱글톤 중심의 원본 GetX와 달리, **Flutter 위젯 트리의 스코프를 준수하는 의존성 주입 계층**을 생성합니다.
 - 화면(`Route`)이 언마운트되어 트리에서 제거될 때, 해당 스코프의 컨트롤러들도 **자동으로 `onClose()` 라이프사이클을 수행하며 가비지 컬렉션(GC)**됩니다.
+- **기본 사용 예시**:
+  ```dart
+  BindingWidget(
+    bindings: [Bind<MyController>(() => MyController())],
+    child: const MyPage(),
+  )
+  // MyPage 내부 혹은 하위 트리에서는 Get.find<MyController>(context)로 간단히 주입받아 사용합니다.
+  ```
 
 ### 5. 🧵 스레드 세이프 컨텍스트 룩업 (`GetView` & `Expando`)
 - 비동기 빌드 및 중첩된 빌더(`Obx` 등) 구조 속에서도 타이밍 이슈 없이 정확한 컨트롤러 인스턴스를 찾을 수 있도록 `Expando<BuildContext>`를 활용한 스레드 세이프 생명주기 바인딩을 적용했습니다.
@@ -34,20 +49,6 @@
 - `List<E>`와 완전히 동일한 API(`add`, `remove`, `sort`, `assignAll` 등)를 사용하면서, 동일 동기 이벤트 내 발생한 **N번의 변이를 자동으로 1회의 Obx 리빌드로 압축**합니다.
 - 오리지널 GetX의 고주파 쓰기 문제(루프 100회 → 리빌드 100회)를 **더티 플래그 + 마이크로태스크 파이프라인**으로 완전 해결하였습니다.
 - `ever`, `once`, `debounce` 워커와 완벽 호환되며, `sort()` / `shuffle()` 등 내부 스왑 연산 역시 단 1회의 알림만 발생합니다.
-
----
-
-## 📦 시작하기 (Getting Started)
-
-`pubspec.yaml` 파일에 `getx_distil` 의존성을 추가합니다:
-
-```yaml
-dependencies:
-  flutter:
-    sdk: flutter
-  getx_distil:
-    path: ../getx_distil # 로컬 개발용 경로 설정
-```
 
 ---
 
@@ -422,12 +423,3 @@ class UserProfilePage extends GetView<ApiController> {
 }
 ```
 
----
-
-## 📁 예제 애플리케이션 (`.\example`)
-더욱 고도화된 실제 활용 방법은 `example` 디렉토리에 정의된 **글래스모피즘 주식 대시보드** 앱에서 확인하실 수 있습니다.
-- **실시간 가격 피드 디스플레이** (고주파 FIFO 스트림 시연)
-- **로컬 다국어 번역 시스템** (`String.tr` 연동)
-- **전역 다크 모드 핫 토글** 및 `GoRouter` 통합 연동
-
-자세한 내용은 [Example README](file:///c:/Users/kerbe/Projects/getx_distil/example/README.md) 파일을 참고해 주세요.
