@@ -570,5 +570,119 @@ void main() {
     await tester.pump();
     expect(find.text('Empty View'), findsOneWidget);
   });
+
+  group('Hybrid DI Tests', () {
+    setUp(() {
+      Get.reset();
+    });
+
+    test('Get.put and context-less Get.find resolves successfully', () {
+      final controller = Get.put(CounterController());
+      expect(controller.count.value, 0);
+
+      final resolved = Get.find<CounterController>();
+      expect(resolved, controller);
+    });
+
+    test('Get.lazyPut instantiates dependency lazily', () {
+      bool instantiated = false;
+      Get.lazyPut<CounterController>(() {
+        instantiated = true;
+        return CounterController();
+      });
+
+      expect(instantiated, false);
+
+      final resolved = Get.find<CounterController>();
+      expect(instantiated, true);
+      expect(resolved.count.value, 0);
+    });
+
+    test('Get.delete triggers onClose and cleans registry', () {
+      final controller = LifecycleController();
+      Get.put<LifecycleController>(controller);
+
+      expect(controller.onInitCalled, true);
+      expect(controller.onCloseCalled, false);
+
+      final deleted = Get.delete<LifecycleController>();
+      expect(deleted, true);
+      expect(controller.onCloseCalled, true);
+
+      expect(() => Get.find<LifecycleController>(), throwsA(isA<FlutterError>()));
+    });
+
+    test('Get.put and Get.find with tag support isolated correctly', () {
+      final controllerA = Get.put(CounterController(), tag: 'A');
+      final controllerB = Get.put(CounterController(), tag: 'B');
+
+      controllerA.count.value = 10;
+      controllerB.count.value = 20;
+
+      expect(Get.find<CounterController>(null, 'A').count.value, 10);
+      expect(Get.find<CounterController>(null, 'B').count.value, 20);
+    });
+
+    testWidgets('Hybrid lookup priority: Scoped lookup preferred, fallback to global', (WidgetTester tester) async {
+      // Global controller
+      final globalController = CounterController()..count.value = 100;
+      Get.put<CounterController>(globalController);
+
+      // Scoped controller
+      final scopedController = CounterController()..count.value = 10;
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: BindingWidget(
+            bindings: [
+              Bind<CounterController>(() => scopedController),
+            ],
+            child: Builder(
+              builder: (context) {
+                // With context: retrieves scoped controller (10)
+                final resolvedScoped = Get.find<CounterController>(context);
+                expect(resolvedScoped.count.value, 10);
+
+                // Without context: falls back to global controller (100)
+                final resolvedGlobal = Get.find<CounterController>();
+                expect(resolvedGlobal.count.value, 100);
+
+                return const Text('Active Scope');
+              },
+            ),
+          ),
+        ),
+      );
+    });
+
+    testWidgets('GetxService fallback via getImmortal when context is null', (WidgetTester tester) async {
+      final dbService = DatabaseService();
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: BindingWidget(
+            bindings: [
+              Bind<DatabaseService>(() => dbService),
+            ],
+            child: Builder(
+              builder: (context) {
+                // Initialize the service via scoped lookup once
+                Get.find<DatabaseService>(context);
+                return const Text('Active Scope');
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      // Now lookup WITHOUT context - should successfully resolve via getImmortal
+      final resolved = Get.find<DatabaseService>();
+      expect(resolved, dbService);
+    });
+  });
 }
 

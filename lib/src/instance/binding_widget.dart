@@ -40,6 +40,10 @@ class BindingWidgetState extends State<BindingWidget> {
     return null;
   }
 
+  static void clearImmortal() {
+    _immortalInstances.clear();
+  }
+
   bool hasBinding<T>() {
     return _immortalInstances.containsKey(T) || widget.bindings.any((b) => b.type == T);
   }

@@ -1,6 +1,21 @@
 import 'package:flutter/widgets.dart';
 import '../rx/rx_types.dart';
+import '../state_manager/getx_controller.dart';
 import 'binding_widget.dart';
+
+class _Dependency {
+  final Object? Function()? factory;
+  Object? instance;
+  final bool permanent;
+  final bool fenix;
+
+  _Dependency({
+    this.factory,
+    this.instance,
+    this.permanent = false,
+    this.fenix = false,
+  });
+}
 
 class Get {
   Get._();
@@ -23,35 +38,131 @@ class Get {
     translations.clear();
   }
 
-  static T find<T>(BuildContext context) {
-    final immortal = BindingWidgetState.getImmortal<T>();
-    if (immortal != null) {
-      return immortal;
+  // Global registry for Hybrid DI
+  static final Map<String, _Dependency> _globalRegistry = {};
+
+  static String _getKey(Type type, String? tag) {
+    return tag == null ? type.toString() : '${type.toString()}#$tag';
+  }
+
+  /// Registers a global dependency instantly.
+  static T put<T>(T dependency, {String? tag, bool permanent = false}) {
+    final key = _getKey(T, tag);
+    _globalRegistry[key] = _Dependency(
+      instance: dependency,
+      permanent: permanent,
+    );
+    if (dependency is GetLifeCycleMixin) {
+      dependency.onStart();
+    }
+    return dependency;
+  }
+
+  /// Registers a global dependency lazily. It will be instantiated on the first [find] call.
+  static void lazyPut<T>(T Function() builder, {String? tag, bool fenix = false}) {
+    final key = _getKey(T, tag);
+    _globalRegistry[key] = _Dependency(
+      factory: builder,
+      fenix: fenix,
+    );
+  }
+
+  /// Deletes a registered dependency from the global registry, invoking onClose if applicable.
+  static bool delete<T>({String? tag, bool force = false}) {
+    final key = _getKey(T, tag);
+    if (_globalRegistry.containsKey(key)) {
+      final dep = _globalRegistry[key]!;
+      if (!dep.permanent || force) {
+        if (dep.instance is GetLifeCycleMixin) {
+          (dep.instance as GetLifeCycleMixin).onDelete();
+        }
+        _globalRegistry.remove(key);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Clears all non-permanent dependencies from the global registry.
+  static void reset({bool clearFactory = true}) {
+    final keysToRemove = <String>[];
+    _globalRegistry.forEach((key, dep) {
+      if (!dep.permanent) {
+        if (dep.instance is GetLifeCycleMixin) {
+          (dep.instance as GetLifeCycleMixin).onDelete();
+        }
+        keysToRemove.add(key);
+      }
+    });
+    for (final key in keysToRemove) {
+      _globalRegistry.remove(key);
+    }
+    BindingWidgetState.clearImmortal();
+  }
+
+  /// Finds the registered instance of type [T].
+  ///
+  /// Priority:
+  /// 1. Widget tree-scoped DI (if [context] is provided and [tag] is null).
+  /// 2. Global registry (for instances registered via [put] or [lazyPut]).
+  /// 3. Global immortal instances (for [GetxService]s instantiated via widget-scoped DI).
+  static T find<T>([BuildContext? context, String? tag]) {
+    // 1. Widget tree-scoped lookup (if context is provided and tag is null)
+    if (context != null && tag == null) {
+      final immortal = BindingWidgetState.getImmortal<T>();
+      if (immortal != null) {
+        return immortal;
+      }
+
+      InheritedBinding? foundBinding;
+      InheritedElement? foundElement;
+
+      context.visitAncestorElements((element) {
+        if (element is InheritedElement && element.widget is InheritedBinding) {
+          final binding = element.widget as InheritedBinding;
+          if (binding.state.hasBinding<T>()) {
+            foundBinding = binding;
+            foundElement = element;
+            return false; // Stop traversal
+          }
+        }
+        return true; // Continue traversal
+      });
+
+      if (foundElement != null && foundBinding != null) {
+        context.dependOnInheritedElement(foundElement!);
+        return foundBinding!.state.getInstance<T>();
+      }
     }
 
-    InheritedBinding? foundBinding;
-    InheritedElement? foundElement;
-
-    context.visitAncestorElements((element) {
-      if (element is InheritedElement && element.widget is InheritedBinding) {
-        final binding = element.widget as InheritedBinding;
-        if (binding.state.hasBinding<T>()) {
-          foundBinding = binding;
-          foundElement = element;
-          return false; // Stop traversal
+    // 2. Global registry lookup (supports tags and lazy instantiation)
+    final key = _getKey(T, tag);
+    if (_globalRegistry.containsKey(key)) {
+      final dep = _globalRegistry[key]!;
+      if (dep.instance == null && dep.factory != null) {
+        final instance = dep.factory!();
+        dep.instance = instance;
+        if (instance is GetLifeCycleMixin) {
+          instance.onStart();
         }
       }
-      return true; // Continue traversal
-    });
+      if (dep.instance != null) {
+        return dep.instance as T;
+      }
+    }
 
-    if (foundElement != null && foundBinding != null) {
-      context.dependOnInheritedElement(foundElement!);
-      return foundBinding!.state.getInstance<T>();
+    // 3. Global immortal instance lookup (if context is null but tag is null)
+    if (tag == null) {
+      final immortal = BindingWidgetState.getImmortal<T>();
+      if (immortal != null) {
+        return immortal;
+      }
     }
 
     throw FlutterError(
-      'Could not find any BindingWidget containing the type $T in the widget tree. '
-      'Make sure you wrapped your view with a BindingWidget containing Bind<$T>(...).'
+      'Could not find any instance of type $T${tag != null ? ' with tag "$tag"' : ''} in either Widget Tree or Global Registry. '
+      'Make sure you registered it via Get.put() / Get.lazyPut() or wrapped your view with a BindingWidget.'
     );
   }
 }
+
