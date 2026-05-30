@@ -7,12 +7,12 @@ class SettingsController extends GetxController {
 
   SettingsController({required this.userRole});
 
-  bool get isDarkMode => AppConfig.isDarkMode.value;
+  bool get isDarkMode => Get.find<AppConfig>().isDarkMode.value;
 
   String get currentLanguage => Get.locale?.languageCode ?? 'en';
 
   void toggleTheme() {
-    AppConfig.isDarkMode.toggle();
+    Get.find<AppConfig>().isDarkMode.toggle();
   }
 
   void changeLanguage(String langCode) {

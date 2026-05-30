@@ -14,6 +14,7 @@ class GetMaterialApp extends StatelessWidget {
   final Iterable<Locale>? supportedLocales;
   final Widget Function(BuildContext, Widget?)? builder;
   final Key? widgetKey;
+  final List<Bind<dynamic>>? bindings;
 
   GetMaterialApp({
     super.key,
@@ -29,6 +30,7 @@ class GetMaterialApp extends StatelessWidget {
     this.supportedLocales,
     this.builder,
     this.widgetKey,
+    this.bindings,
   }) {
     if (translations != null) {
       Get.addTranslations(translations!.keys);
@@ -39,19 +41,32 @@ class GetMaterialApp extends StatelessWidget {
     if (fallbackLocale != null && Get.fallbackLocale == null) {
       Get.fallbackLocale = fallbackLocale;
     }
+    if (theme != null && Get.theme == null) {
+      Get.theme = theme;
+    }
+    if (darkTheme != null && Get.darkTheme == null) {
+      Get.darkTheme = darkTheme;
+    }
+    if (themeMode != null) {
+      Get.themeMode = themeMode!;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
+    Widget app = Obx(() {
       final activeLocale = Get.locale;
+      final activeTheme = Get.theme ?? theme;
+      final activeDarkTheme = Get.darkTheme ?? darkTheme;
+      final activeThemeMode = Get.themeMode;
+
       if (routerConfig != null) {
         return MaterialApp.router(
           key: widgetKey,
           routerConfig: routerConfig,
-          theme: theme,
-          darkTheme: darkTheme,
-          themeMode: themeMode,
+          theme: activeTheme,
+          darkTheme: activeDarkTheme,
+          themeMode: activeThemeMode,
           locale: activeLocale,
           localizationsDelegates: localizationsDelegates,
           supportedLocales: supportedLocales ?? const <Locale>[Locale('en', 'US')],
@@ -61,9 +76,9 @@ class GetMaterialApp extends StatelessWidget {
         return MaterialApp(
           key: widgetKey,
           home: home,
-          theme: theme,
-          darkTheme: darkTheme,
-          themeMode: themeMode,
+          theme: activeTheme,
+          darkTheme: activeDarkTheme,
+          themeMode: activeThemeMode,
           locale: activeLocale,
           localizationsDelegates: localizationsDelegates,
           supportedLocales: supportedLocales ?? const <Locale>[Locale('en', 'US')],
@@ -71,5 +86,14 @@ class GetMaterialApp extends StatelessWidget {
         );
       }
     });
+
+    if (bindings != null && bindings!.isNotEmpty) {
+      app = BindingWidget(
+        bindings: bindings!,
+        child: app,
+      );
+    }
+
+    return app;
   }
 }

@@ -1,5 +1,6 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import '../rx/rx_types.dart';
+import '../rx/rx_extensions.dart';
 import '../state_manager/getx_controller.dart';
 import 'binding_widget.dart';
 
@@ -28,6 +29,18 @@ class Get {
   static Locale? get fallbackLocale => _fallbackLocale.value;
   static set fallbackLocale(Locale? val) => _fallbackLocale.value = val;
 
+  static final Rx<ThemeMode> _themeMode = ThemeMode.system.obs;
+  static ThemeMode get themeMode => _themeMode.value;
+  static set themeMode(ThemeMode val) => _themeMode.value = val;
+
+  static final Rxn<ThemeData> _theme = Rxn<ThemeData>();
+  static ThemeData? get theme => _theme.value;
+  static set theme(ThemeData? val) => _theme.value = val;
+
+  static final Rxn<ThemeData> _darkTheme = Rxn<ThemeData>();
+  static ThemeData? get darkTheme => _darkTheme.value;
+  static set darkTheme(ThemeData? val) => _darkTheme.value = val;
+
   static final Map<String, Map<String, String>> translations = {};
 
   static void addTranslations(Map<String, Map<String, String>> tr) {
@@ -45,9 +58,30 @@ class Get {
     return tag == null ? type.toString() : '${type.toString()}#$tag';
   }
 
+  /// Checks if a dependency of type [T] is registered in the global registry.
+  static bool isRegistered<T>({String? tag}) {
+    final key = _getKey(T, tag);
+    return _globalRegistry.containsKey(key);
+  }
+
   /// Registers a global dependency instantly.
+  /// If it is already registered, it returns the existing instance to preserve singleton behavior.
   static T put<T>(T dependency, {String? tag, bool permanent = false}) {
     final key = _getKey(T, tag);
+    if (_globalRegistry.containsKey(key)) {
+      final dep = _globalRegistry[key]!;
+      if (dep.instance == null && dep.factory != null) {
+        final instance = dep.factory!();
+        dep.instance = instance;
+        if (instance is GetLifeCycleMixin) {
+          instance.onStart();
+        }
+      }
+      if (dep.instance != null) {
+        return dep.instance as T;
+      }
+    }
+
     _globalRegistry[key] = _Dependency(
       instance: dependency,
       permanent: permanent,
@@ -98,6 +132,9 @@ class Get {
       _globalRegistry.remove(key);
     }
     BindingWidgetState.clearImmortal();
+    _themeMode.value = ThemeMode.system;
+    _theme.value = null;
+    _darkTheme.value = null;
   }
 
   /// Finds the registered instance of type [T].

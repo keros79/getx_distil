@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:getx_distil/get.dart';
 
@@ -584,6 +584,14 @@ void main() {
       expect(resolved, controller);
     });
 
+    test('Get.put behaves as a singleton and does not overwrite existing instance', () {
+      final controller1 = Get.put(CounterController());
+      final controller2 = Get.put(CounterController());
+
+      expect(controller2, controller1);
+      expect(Get.isRegistered<CounterController>(), true);
+    });
+
     test('Get.lazyPut instantiates dependency lazily', () {
       bool instantiated = false;
       Get.lazyPut<CounterController>(() {
@@ -682,6 +690,50 @@ void main() {
       // Now lookup WITHOUT context - should successfully resolve via getImmortal
       final resolved = Get.find<DatabaseService>();
       expect(resolved, dbService);
+    });
+
+    testWidgets('GetMaterialApp binds root-level dependencies and propagates them', (WidgetTester tester) async {
+      final counter = CounterController();
+
+      await tester.pumpWidget(
+        GetMaterialApp(
+          bindings: [
+            Bind<CounterController>(() => counter),
+          ],
+          home: Builder(
+            builder: (context) {
+              final resolved = Get.find<CounterController>(context);
+              return Text('Count: ${resolved.count.value}');
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('Count: 0'), findsOneWidget);
+    });
+
+    testWidgets('GetMaterialApp reactively updates themeMode dynamically', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        GetMaterialApp(
+          theme: ThemeData(brightness: Brightness.light),
+          darkTheme: ThemeData(brightness: Brightness.dark),
+          themeMode: ThemeMode.light,
+          home: Builder(
+            builder: (context) {
+              final theme = Theme.of(context);
+              return Text('Brightness: ${theme.brightness.name}');
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('Brightness: light'), findsOneWidget);
+
+      // Reactively change theme mode
+      Get.themeMode = ThemeMode.dark;
+      await tester.pumpAndSettle();
+
+      expect(find.text('Brightness: dark'), findsOneWidget);
     });
   });
 }

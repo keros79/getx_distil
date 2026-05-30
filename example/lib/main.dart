@@ -108,51 +108,55 @@ class MyApp extends StatelessWidget {
       ],
     );
 
-    // Bootstrap root with pure GetMaterialApp reactively responding to global AppConfig
-    return Obx(() {
-      final isDark = AppConfig.isDarkMode.value;
-      return GetMaterialApp(
-        routerConfig: router,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.light,
-          ),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.white,
-            elevation: 0,
-          ),
-          cardTheme: const CardThemeData(
-            color: Colors.white,
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+    // Bootstrap root with pure GetMaterialApp
+    return GetMaterialApp(
+      routerConfig: router,
+      bindings: [
+        Bind<AppConfig>(() => AppConfig()),
+      ],
+      builder: (context, child) {
+        // Force initialization of AppConfig GetxService at app startup
+        Get.find<AppConfig>(context);
+        return child!;
+      },
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.light,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          elevation: 0,
+        ),
+        cardTheme: const CardThemeData(
+          color: Colors.white,
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+        ),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.cyan,
+          brightness: Brightness.dark,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1E293B),
+          elevation: 0,
+        ),
+        cardTheme: const CardThemeData(
+          color: Color(0xFF1E293B),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+            side: BorderSide(color: Colors.white10),
           ),
         ),
-        darkTheme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.cyan,
-            brightness: Brightness.dark,
-          ),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF1E293B),
-            elevation: 0,
-          ),
-          cardTheme: const CardThemeData(
-            color: Color(0xFF1E293B),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(20)),
-              side: BorderSide(color: Colors.white10),
-            ),
-          ),
-        ),
-        themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
-        translations: AppTranslations(),
-        locale: const Locale('en', 'US'),
-        fallbackLocale: const Locale('en', 'US'),
-      );
-    });
+      ),
+      translations: AppTranslations(),
+      locale: const Locale('en', 'US'),
+      fallbackLocale: const Locale('en', 'US'),
+    );
   }
 }

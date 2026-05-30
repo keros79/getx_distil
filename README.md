@@ -82,25 +82,58 @@ Obx(() => Text(
 
 ---
 
-### 2. 🧵 GetView & Scoped DI (의존성 주입 및 뷰)
-전역 싱글톤 중심의 오리지널 GetX와 달리, `getx_distil`은 Flutter 위젯 트리의 스코프를 철저히 따르며 타입 안전한 의존성 주입을 지향합니다.
+### 2. 🧵 GetView & Hybrid DI (글로벌 싱글톤 & 위젯 트리 스코프 DI)
+`getx_distil`은 관리하고자 하는 **의존성(Dependency)의 수명과 사용 목적**에 따라 두 가지 DI 영역을 명확하게 구분하여 사용합니다.
 
-#### 💡 오리지널 GetX 대비 핵심 개선점 및 차이점
-* **Expando를 통한 Context 캡처 및 스레드 세이프 룩업**:
-  * `GetView<T>` 내부에서 비동기 빌드나 중첩된 `Obx` 빌더 구조 속에서도 타이밍 이슈 없이 정확한 부모 `BindingWidget`의 컨트롤러 인스턴스를 찾을 수 있도록 내부적으로 `Expando<BuildContext>`를 도입하여 스레드 세이프한 생명주기 바인딩을 적용했습니다.
-* **위젯 트리 기반의 자동 생명주기 제어**:
-  * 전역 메모리에 무기한 상주하는 싱글톤 방식과 달리, 페이지(`Route`)가 닫혀 위젯 트리에서 해제되면 해당 스코프를 담당하던 `BindingWidget`에 묶여 있던 컨트롤러들도 **자동으로 `onClose()` 라이프사이클을 수행하며 GC(가비지 컬렉션)에 의해 완전히 수거**됩니다.
-* **생성자 주입 (Constructor Injection) 기반의 Type-Safe DI**:
-  * 오리지널 GetX의 글로벌 지연 주입(`Get.lazyPut`, `Get.put`) 대신, 라우팅 시점(예: `GoRouter` builder)에서 추출한 매개변수를 `Bind` 공장을 통해 **컨트롤러 생성자에 직접 전달(Constructor Injection)**하는 구조를 권장합니다. 이를 통해 컴파일 타임에 완벽한 타입 안전성을 획득할 수 있습니다.
+* **🌐 전역 글로벌 DI (Global DI)**
+  * **대상**: 앱 실행 동안 영구적으로 유지되어야 하는 백그라운드 서비스, 데이터베이스 세션, 공통 API 클라이언트 등.
+  * **방식**: `Get.put()` 또는 `Get.lazyPut()`을 통해 등록하며, `BuildContext` 없이 언제 어디서든 바로 조회할 수 있습니다.
+* **🌳 지역 트리 DI (Tree-Scoped DI)**
+  * **대상**: 특정 화면(Page)이나 개별 UI 컴포넌트 단위에서만 한시적으로 생존해야 하는 컨트롤러 및 뷰모델.
+  * **방식**: `BindingWidget(bindings)`을 통해 위젯 트리 스코프와 완전히 결합하며, 해당 위젯이 트리에서 언마운트되면 자동으로 수명이 만료되어 소멸(GC)됩니다.
+
+---
+#### 💡 글로벌 DI와 지역 트리 DI의 명확한 역할 분담
+
+##### ① 전역 글로벌 DI (Global DI)
+* **등록**: `Get.put(DatabaseService())` 또는 `Get.lazyPut(() => ApiService())`
+* **조회**: `final api = Get.find<ApiService>();` (BuildContext 매개변수 생략)
+* **특징**:
+  * `BuildContext`가 필요 없으므로 UI 외부의 순수 비즈니스 로직, Repository, Background Task 등 어디서든 즉시 조회해올 수 있습니다.
+  * **싱글톤 보호 장치 (Singleton Protection)**: 오리지널 GetX와 동일하게 `Get.put`을 중복 실행하더라도 기존에 캐싱된 전역 인스턴스를 무조건 반환(Return Existing)하여 전역 상태 오염을 원천 방지합니다.
+  * 이미 특정 타입의 인스턴스가 주입되었는지 검사할 수 있는 `Get.isRegistered<T>()` API를 제공합니다.
+
+##### ② 지역 트리 DI (Tree-Scoped DI)
+* **등록**: `BindingWidget(bindings: [Bind<MyController>(() => MyController())], child: ...)`
+* **조회**: `Get.find<MyController>(context)` 또는 `GetView<MyController>`를 통한 `controller` 지향 접근.
+* **수명**: 플러터 위젯의 Lifecycle과 100% 동기화되어 위젯이 트리에서 제거(`dispose`)될 때 바인딩된 컨트롤러들도 **자동으로 `onClose()` 라이프사이클을 수행하며 GC(가비지 컬렉션)에 의해 완벽하게 수거**됩니다.
+
+---
+
+#### 🚨 왜 지역(화면 단위) DI는 오직 `BindingWidget` 계층으로만 강제되어야 할까요?
+
+수동으로 전역 맵에 집어넣고 뒤로가기 시점에 직접 소멸(Get.delete)시키는 우회로를 열어주면 대형 프로젝트에서 협업 시 심각한 사이드 이펙트가 발생합니다.
+1. **메모리 누수 발생**: 개발자가 `onClose()`나 뒤로가기 시점에 해제 코드를 깜빡하는 실수를 하면 객체가 백그라운드에 영구 상주합니다.
+2. **동기화 타이밍 문제 (Race Condition)**: 화면이 닫힐 때 비동기 콜백이 잔존하여 소멸된 객체를 호출하다 널 참조나 예기치 않은 크래시가 유발됩니다.
+3. **가독성 및 일관성 붕괴**: 누구는 자동으로 수명 주기를 뚫고 누구는 수동으로 관리하여 디버깅 비용이 치솟습니다.
+
+따라서 `getx_distil`은 **"수명이 짧은 화면/컴포넌트 단위의 지역 상태는 반드시 `BindingWidget` 계층을 통해서만 강제한다"**는 일관된 구조적 제약을 부과하여 휴먼 에러를 0%로 만들고 메모리 안정성을 확보합니다.
+
+---
+
+#### 📌 기본 사용법 및 생성자 주입 (Constructor Injection)
 
 ```dart
-// GoRouter 쿼리 파라미터를 컨트롤러 생성자에 직접 안전하게 주입
+// 1. GoRouter 설정 시점 혹은 화면 진입 시 생성자 주입(Constructor Injection) 추천
+// 뷰 진입부(BuildContext가 존재하는 유일한 UI 영역)에서 하위 컨트롤러 생성 시 
+// context 기반으로 조상 의존성을 주입하여 컴파일 타임의 완벽한 타입 안전성을 획득합니다.
 GoRoute(
   path: '/settings',
   builder: (context, state) {
     final userRole = state.uri.queryParameters['user'] ?? 'Guest';
     return BindingWidget(
       bindings: [
+        // SettingsController를 SettingsPage 범위에만 격리하여 바인딩
         Bind<SettingsController>(() => SettingsController(userRole: userRole)),
       ],
       child: const SettingsPage(),
@@ -154,6 +187,23 @@ class SearchController extends GetxController {
 
 ---
 
+### 4. 🏛️ GetMaterialApp & App Bootstrapping (통합 바인딩 및 반응형 테마/언어 설정)
+
+`GetMaterialApp`은 애플리케이션의 초기 설정을 손쉽게 관리하고, 테마 및 언어 변경에 따른 실시간 UI 반영을 안전하게 처리할 수 있도록 설계된 핵심 루트 위젯입니다.
+
+#### 💡 GetMaterialApp 제공 핵심 기능
+1. **내장형 반응형 테마/언어 자동 업데이트**:
+   * 테마(`theme`, `darkTheme`, `themeMode`) 및 언어(`locale`)를 내부 반응형 스트림으로 자동 구독합니다.
+   * `Get.themeMode`나 `Get.locale` 변경 시 별도의 래퍼 위젯 없이도 **앱 전체의 UI가 안전하고 즉각적으로 리빌드**됩니다.
+2. **루트 의존성 주입 (`bindings`)**:
+   * `bindings` 매개변수를 지원하여 루트 위젯 영역 전체를 자동으로 `BindingWidget`으로 감싸줍니다.
+   * 이를 통해 앱 전역에서 컴포넌트 생명주기에 맞게 유지될 전역 서비스(`GetxService`) 등을 일관된 방식으로 등록할 수 있습니다.
+3. **안전한 빌드 타임 라이프사이클**:
+   * 초기 테마/로케일 설정 또는 변경 작업이 Flutter의 빌드 단계(`setState() during build`)와 충돌하여 예외를 발생시키지 않도록 설계되었습니다.
+
+---
+
+
 ### 5. 🏛️ GetxService (영구 보존 글로벌 서비스)
 
 `GetxService`는 `GetxController`와 동일하게 `GetLifeCycleMixin`을 상속받지만, 위젯 트리의 디스포즈(Dispose) 주기와 연동되지 않고 메모리에 계속 상주하는 **영구 보존 서비스(Immortal Service)**를 만들 때 사용됩니다.
@@ -183,19 +233,24 @@ class DatabaseService extends GetxService {
 ```
 
 ```dart
-// 2. 최상위 또는 필요한 위젯 트리 스코프에 바인딩
-BindingWidget(
+// 2. 최상위 GetMaterialApp에 바인딩
+GetMaterialApp(
   bindings: [
     Bind<DatabaseService>(() => DatabaseService()),
   ],
+  builder: (context, child) {
+    // 앱 기동 시 즉각 인스턴스화하여 초기화 실행
+    Get.find<DatabaseService>(context);
+    return child!;
+  },
   child: const MyApp(),
 )
 ```
 
 ```dart
 // 3. 앱 내 어디서든 주입 및 사용
-// 화면 전환으로 인해 BindingWidget이 소멸되어도 DatabaseService는 메모리에 계속 생존하여 상태를 유지합니다.
-final db = Get.find<DatabaseService>(context);
+// 일단 한 번 초기화되면 UI 외부나 BuildContext가 없는 영역에서도 context-less로 안전하게 조회 가능합니다!
+final db = Get.find<DatabaseService>();
 ```
 
 ---

@@ -29,7 +29,7 @@ class DashboardPage extends GetView<DashboardController> {
               isDark ? Icons.light_mode : Icons.dark_mode,
               color: themeColor,
             ),
-            onPressed: () => AppConfig.isDarkMode.toggle(),
+            onPressed: () => Get.find<AppConfig>().isDarkMode.toggle(),
           ),
 
           IconButton(
