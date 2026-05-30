@@ -8,7 +8,7 @@
 
 ## ✨ 핵심 기능 (Key Features)
 
-* ⚡ **초경량 반응형 코어 (`Rx` & Callable Semantics)**: `.obs` 및 `count()` / `count(10)` 형태의 Callable 문법으로 보일러플레이트를 최소화합니다.
+* ⚡ **초경량 반응형 코어 (`Rx`)**: `.obs` 및 `.value` 형태의 문법으로 보일러플레이트를 최소화합니다.
 * 🛡️ **FIFO 비동기 파이프라인 (`updateSequential`)**: 고주파 비동기 업데이트 시 발생하는 상태 역전·레이스 컨디션을 순차 대기열로 방지합니다. 단순 덮어쓰기는 `rx.value = v`, 이전 상태 의존 트랜잭션은 `rx.updateSequential(...)`을 사용합니다.
 * 🎯 **핀포인트 반응형 위젯 (`Obx`)**: 변화된 최하위 위젯만 재빌드하고 미사용 구독을 자동 해제합니다.
 * 🌳 **트리 스코프 DI (`BindingWidget` & `Get.find`)**: 위젯 트리 스코프를 따르며, 스코프가 제거될 때 컨트롤러가 자동 `onClose()` 후 GC됩니다.
@@ -34,48 +34,33 @@
   final name = Rxn<String>();      // nullable Rx (null 허용)
   ```
 
-#### 📖 값 읽기 / 쓰기 — 두 가지 방식 모두 지원
+#### 📖 값 읽기 / 쓰기
 
-`getx_distil`은 기존 GetX의 `.value` 방식을 그대로 지원하면서, 더 간결한 **Callable Rx** 방식을 추가로 제공합니다. 어느 쪽을 사용해도 동작은 완전히 동일합니다.
-
-| 동작 | 기존 `.value` 방식 (오리지널 GetX 호환) | Callable 방식 (getx_distil 추가) |
-|------|--------------------------------------|----------------------------------|
-| 읽기 | `count.value` | `count()` |
-| 쓰기 | `count.value = 10` | `count(10)` |
-| null 쓰기 | `name.value = null` | `name(null)` |
+`getx_distil`은 기존 GetX의 `.value` 방식을 통해 반응형 변수의 값을 읽고 씁니다.
 
 ```dart
 class CounterController extends GetxController {
   final count = 0.obs;
   final name = Rxn<String>();
 
-  void incrementByValue() {
-    // 기존 .value 방식 — 오리지널 GetX와 동일
+  void increment() {
     count.value = count.value + 1;
     name.value = 'Flutter';
-  }
-
-  void incrementByCallable() {
-    // Callable 방식 — 더 간결하게 동일한 동작 수행
-    count(count() + 1);
-    name('Flutter');
   }
 }
 ```
 
 #### 💡 오리지널 GetX 대비 핵심 개선점
-* **Callable Rx**: getter/setter를 별도로 선언하지 않고 `count()` / `count(10)` 으로 바로 읽고 씁니다.
-* **Nullable Rx (`Rxn<T>`) null 처리 완벽 지원**: `name(null)` 또는 `name.value = null`로 명시적 null 상태를 안전하게 주입할 수 있습니다.
+* **Nullable Rx (`Rxn<T>`) null 처리 완벽 지원**: `name.value = null`로 명시적 null 상태를 안전하게 주입할 수 있습니다.
 
 #### 🚨 Obx 사용 시 정밀 리빌드(Targeted Rebuild) 가이드
 * **Scaffold 전체를 Obx로 감싸지 마세요!**: 값이 변하지 않는 정적 UI 뼈대까지 통째로 리빌드되어 프레임 드랍이 발생할 수 있습니다.
 * **올바른 최적화 패턴**: `Scaffold`나 공통 레이아웃은 `Obx` 밖에 배치하고, **실제로 값이 변하는 최하위 개별 위젯만 핀포인트로 `Obx`로 감싸서 격리**해야 합니다.
 
 ```dart
-// 핀포인트 Obx 예시 — .value 방식과 Callable 방식 모두 Obx 안에서 동작
+// 핀포인트 Obx 예시
 Obx(() => Text(
-  '${controller.count.value}',   // .value 방식
-  // 또는: '${controller.count()}' — Callable 방식
+  '${controller.count.value}',
   style: Theme.of(context).textTheme.headlineMedium,
 ))
 ```

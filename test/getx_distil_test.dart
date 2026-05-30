@@ -57,30 +57,28 @@ class RegularController extends GetxController {
 class ApiController extends GetxController with StateMixin<String> {}
 
 void main() {
-  test('Rx Core Getter, Setter & Callable features', () {
+  test('Rx Core Getter & Setter features', () {
     final count = 10.obs;
     expect(count.value, 10);
 
-    // Test callable setter/getter
-    count(20);
-    expect(count(), 20);
+    // Test setter/getter
+    count.value = 20;
     expect(count.value, 20);
 
     // Operator and primitive type checks
     final text = 'hello'.obs;
     expect(text.value, 'hello');
-    expect(text(), 'hello');
 
     final flag = true.obs;
     expect(flag.isTrue, true);
     flag.toggle();
     expect(flag.isFalse, true);
 
-    // Test nullable callable setter (explicit null assignment)
+    // Test nullable setter (explicit null assignment)
     final nullableText = Rxn<String>('initial');
-    expect(nullableText(), 'initial');
-    nullableText(null); 
-    expect(nullableText(), null);
+    expect(nullableText.value, 'initial');
+    nullableText.value = null; 
+    expect(nullableText.value, null);
   });
 
   test('Rx updateSequential FIFO Queue Optimization', () async {
