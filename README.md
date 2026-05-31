@@ -52,6 +52,7 @@ class CounterController extends GetxController {
 
 #### 💡 오리지널 GetX 대비 핵심 개선점
 * **Nullable Rx (`Rxn<T>`) null 처리 완벽 지원**: `name.value = null`로 명시적 null 상태를 안전하게 주입할 수 있습니다.
+* **🛡️ Obx 내 비동기(Async/Future) 오용 차단**: `Obx` 빌더 내부에서 `async/await`나 `Future`를 반환하도록 작성하여 반응형 변수 추적 루프가 누락되는 조용한 버그(Silent tracking failures)를 방지하기 위해, `Future` 반환 감지 시 유용한 경고와 함께 명확한 `FlutterError`를 즉시 발생시킵니다.
 
 #### 🚨 Obx 사용 시 정밀 리빌드(Targeted Rebuild) 가이드
 * **Scaffold 전체를 Obx로 감싸지 마세요!**: 값이 변하지 않는 정적 UI 뼈대까지 통째로 리빌드되어 프레임 드랍이 발생할 수 있습니다.

@@ -128,6 +128,28 @@ void main() {
     expect(find.text('Count: 5'), findsOneWidget);
   });
 
+  test('Notifier.append throws FlutterError when builder returns a Future', () {
+    expect(
+      () => Notifier.instance.append(
+        NotifyData(updater: () {}, disposers: [], throwException: false),
+        () async => 'Async Result',
+      ),
+      throwsA(isA<FlutterError>()),
+    );
+  });
+
+  testWidgets('Obx throws FlutterError or TypeError when builder is asynchronous', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Obx(() => Future.value(const Text('Async')) as dynamic),
+      ),
+    );
+
+    final dynamic exception = tester.takeException();
+    expect(exception, anyOf(isA<FlutterError>(), isA<TypeError>()));
+  });
+
   testWidgets('Scoped DI and isolated multi-instances test', (WidgetTester tester) async {
     // Nested view scopes with duplicate bindings
     await tester.pumpWidget(

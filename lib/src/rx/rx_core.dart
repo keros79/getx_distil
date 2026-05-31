@@ -6,8 +6,12 @@ typedef GetStateUpdate = void Function();
 
 abstract class RxInterface<T> implements ValueListenable<T> {
   void close();
-  StreamSubscription<T> listen(void Function(T event) onData,
-      {Function? onError, void Function()? onDone, bool? cancelOnError});
+  StreamSubscription<T> listen(
+    void Function(T event) onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  });
 }
 
 class ObxError implements Exception {
@@ -161,12 +165,22 @@ class Notifier {
   R append<R>(NotifyData data, R Function() builder) {
     final oldNotifyData = _notifyData;
     _notifyData = data;
-    
+
     _trackingCount++;
     isTracking = true;
-    
+
     try {
       final result = builder();
+      if (result is Future) {
+        throw FlutterError(
+          '[getx] Obx builder returned a Future. The Obx builder must be completely synchronous.\n'
+          'Reading reactive variables inside an asynchronous block (like async/await or Future callbacks) '
+          'causes reactive dependencies to be registered outside the active tracking frame, '
+          'leading to untracked state updates and UI sync bugs.\n'
+          'Avoid using async/await inside Obx. If you need asynchronous initialization, '
+          'fetch the data inside your Controller\'s onInit() or onReady() instead.',
+        );
+      }
       if (data.disposers.isEmpty && data.throwException) {
         throw const ObxError();
       }
