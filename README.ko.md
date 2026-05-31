@@ -168,4 +168,4 @@ controller.obx(
 
 ## 📄 라이선스
 
-이 프로젝트는 MIT 라이선스에 따라 배포됩니다. 자세한 정보는 [LICENSE](file:///c:/Users/kerbe/Projects/getx_distil/LICENSE) 파일에서 확인하실 수 있습니다.
+이 프로젝트는 MIT 라이선스에 따라 배포됩니다.
