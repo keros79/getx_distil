@@ -51,7 +51,36 @@ Obx(() => Text('${controller.count.value}'));
 
 ---
 
-### 2. 🌳 Widget Tree-Scoped Dependency Injection (`BindingWidget`)
+### 2. 🚀 Global/Classic Dependency Injection (`Get.put` & `Get.find`)
+Classic GetX singleton dependency injection that registers instances into the global registry instantly or lazily, enabling context-less access from anywhere in your codebase.
+
+Registering instances:
+```dart
+// 1. put: Instantly instantiates and registers a singleton in global memory
+final controller = Get.put(CounterController());
+
+// 2. lazyPut: Registers a builder function, instantiating the controller only on its first Get.find call
+Get.lazyPut(() => CounterController());
+
+// 3. Register multiple instances of the same type using tags
+Get.put(CounterController(), tag: 'special_counter');
+```
+
+Finding instances (context-less anywhere in your code):
+```dart
+// Resolve and retrieve the registered singleton instance
+final controller = Get.find<CounterController>();
+
+// Resolve tagged instances
+final specialController = Get.find<CounterController>(null, 'special_counter');
+```
+
+> [!TIP]
+> `getx_distil` features a **Hybrid DI** system. If you provide a `BuildContext` like `Get.find(context)`, it will prioritize widget tree-scoped lookup (`BindingWidget`). If it is not found, it seamlessly falls back to resolving the dependency from the global registry.
+
+---
+
+### 3. 🌳 Widget Tree-Scoped Dependency Injection (`BindingWidget`)
 Synchronize your controller's lifetime directly with your screen's visibility. Perfect for `GoRouter` or native `Navigator`.
 
 ```dart
@@ -82,7 +111,7 @@ class SettingsPage extends GetView<SettingsController> {
 
 ---
 
-### 3. 🌐 Global Persistent Services (`GetxService`)
+### 4. 🌐 Global Persistent Services (`GetxService`)
 For infrastructure-level layers that must remain resident as Immortal Singletons (e.g., Databases, Auth Session Managers, Network Clients).
 
 ```dart
@@ -106,7 +135,7 @@ final db = Get.find<DatabaseService>();
 
 ---
 
-### 4. 🛠️ Background Side-Effects (`Worker`)
+### 5. 🛠️ Background Side-Effects (`Worker`)
 Monitor state variations reactively and execute asynchronous validations, API triggers, or debounces cleanly.
 
 ```dart
@@ -135,7 +164,7 @@ class SearchController extends GetxController {
 
 ---
 
-### 5. 🔄 Declarative Async Branching (`StateMixin`)
+### 6. 🔄 Declarative Async Branching (`StateMixin`)
 Eradicate convoluted `if-else` blocks in your build methods for typical API states: Loading, Success, Empty, and Error.
 
 ```dart
@@ -162,6 +191,56 @@ controller.obx(
   onEmpty: const Text('No user data found.'),
   onError: (error) => Text('Error: $error', style: const TextStyle(color: Colors.red)),
 );
+```
+
+---
+
+### 7. 🌐 Internationalization & Localization (`Translations` & `tr`)
+Manage translation dictionaries reactively and switch UI language dynamically on-the-fly based on user preferences or device locale settings.
+
+Define custom translations:
+```dart
+class MyTranslations extends Translations {
+  @override
+  Map<String, Map<String, String>> get keys => {
+    'en_US': {
+      'hello': 'Hello World',
+      'welcome': 'Welcome, @name!',
+    },
+    'ko_KR': {
+      'hello': '안녕하세요',
+      'welcome': '안녕하세요, @name님!',
+    }
+  };
+}
+```
+
+Register translations at root `GetMaterialApp`:
+```dart
+GetMaterialApp(
+  translations: MyTranslations(),
+  locale: const Locale('en', 'US'),
+  fallbackLocale: const Locale('en', 'US'),
+  child: const MyApp(),
+);
+```
+
+Render localized text reactively in your View layer:
+```dart
+// 1. Simple translation lookup
+Obx(() => Text('hello'.tr))
+
+// 2. Parameter-injected translation
+Obx(() => Text('welcome'.trParams({'name': 'John Doe'})))
+```
+
+Switch locale dynamically at runtime:
+```dart
+// Change locale to Spanish (or Korean)
+Get.locale = const Locale('ko', 'KR');
+
+// Change locale to English
+Get.locale = const Locale('en', 'US');
 ```
 
 ---

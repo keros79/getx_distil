@@ -51,7 +51,36 @@ Obx(() => Text('${controller.count.value}'));
 
 ---
 
-### 2. 🌳 위젯 트리 스코프 의존성 주입 (`BindingWidget`)
+### 2. 🚀 전역/클래식 의존성 주입 (`Get.put` & `Get.find`)
+전역 범위(Global Registry)에 인스턴스를 즉시 혹은 지연 등록하여 앱 어디서든 쉽게 참조할 수 있는 전통적인 GetX 방식의 싱글톤 DI입니다.
+
+인스턴스 등록:
+```dart
+// 1. put: 인스턴스를 즉시 생성하여 전역 메모리에 등록
+final controller = Get.put(CounterController());
+
+// 2. lazyPut: 인스턴스를 등록만 해두고, 최초로 Get.find가 호출되는 시점에 생성 (지연 로딩)
+Get.lazyPut(() => CounterController());
+
+// 3. tag를 통한 고유 식별 등록 (동일 타입의 멀티 인스턴스)
+Get.put(CounterController(), tag: 'special_counter');
+```
+
+인스턴스 조회 (BuildContext가 필요 없는 전역 참조):
+```dart
+// 전역에 등록된 인스턴스 검색 및 획득
+final controller = Get.find<CounterController>();
+
+// tag를 지정해 등록된 인스턴스 검색
+final specialController = Get.find<CounterController>(null, 'special_counter');
+```
+
+> [!TIP]
+> `getx_distil`은 **하이브리드 DI**를 지원합니다. `Get.find(context)`와 같이 `BuildContext`를 함께 전달하면 화면 위젯 트리 범위의 DI(`BindingWidget`)에서 인스턴스를 우선 탐색하며, 존재하지 않을 경우 자동으로 전역 범위(Global Registry)를 찾아 인스턴스를 반환합니다.
+
+---
+
+### 3. 🌳 위젯 트리 스코프 의존성 주입 (`BindingWidget`)
 컨트롤러의 수명 주기를 화면의 가시성(Visibility)과 완벽히 일치시킵니다. `GoRouter`나 네이티브 `Navigator` 환경에 최적화되어 있습니다.
 
 ```dart
@@ -82,7 +111,7 @@ class SettingsPage extends GetView<SettingsController> {
 
 ---
 
-### 3. 🌐 전역 불멸 서비스 (`GetxService`)
+### 4. 🌐 전역 불멸 서비스 (`GetxService`)
 데이터베이스 초기화, 유저 인증 정보 세션 매니저, 네트워크 클라이언트 모듈 등 앱 구동 내내 메모리에 유지(Immortal Singleton)되어야 하는 아키텍처 레이어를 선언합니다.
 
 ```dart
@@ -106,7 +135,7 @@ final db = Get.find<DatabaseService>();
 
 ---
 
-### 4. 🛠️ 백그라운드 부수 효과 (`Worker`)
+### 5. 🛠️ 백그라운드 부수 효과 (`Worker`)
 반응형 변수의 상태를 지켜보다가 비동기 API 데이터 갱신, 디바운스 입력 연동 등 실시간 백그라운드 동작을 깔끔하게 처리합니다.
 
 ```dart
@@ -135,7 +164,7 @@ class SearchController extends GetxController {
 
 ---
 
-### 5. 🔄 선언적 비동기 분기 처리 (`StateMixin`)
+### 6. 🔄 선언적 비동기 분기 처리 (`StateMixin`)
 일반적인 API 통신의 네 가지 단골 상태인 로딩 중, 데이터 성공, 비어있음, 에러 발생 처리를 복잡한 분기문 없이 우아하게 작성합니다.
 
 ```dart
@@ -162,6 +191,56 @@ controller.obx(
   onEmpty: const Text('유저 정보를 찾지 못했습니다.'),
   onError: (error) => Text('에러 발생: $error', style: const TextStyle(color: Colors.red)),
 );
+```
+
+---
+
+### 7. 🌐 다국어 및 로컬라이제이션 (`Translations` & `tr`)
+앱의 다국어 번역 리소스를 유연하고 반응형으로 관리하며, 유저의 설정에 따라 화면 언어를 실시간으로 동적 변경합니다.
+
+다국어 번역 사전 정의:
+```dart
+class MyTranslations extends Translations {
+  @override
+  Map<String, Map<String, String>> get keys => {
+    'en_US': {
+      'hello': 'Hello World',
+      'welcome': 'Welcome, @name!',
+    },
+    'ko_KR': {
+      'hello': '안녕하세요',
+      'welcome': '안녕하세요, @name님!',
+    }
+  };
+}
+```
+
+최상위 앱에 번역 등록 및 기본 언어 지정:
+```dart
+GetMaterialApp(
+  translations: MyTranslations(),
+  locale: const Locale('ko', 'KR'),
+  fallbackLocale: const Locale('en', 'US'),
+  child: const MyApp(),
+);
+```
+
+뷰 레이어에서 반응형으로 다국어 텍스트 사용:
+```dart
+// 1. 단순 번역 lookup
+Obx(() => Text('hello'.tr))
+
+// 2. 파라미터 치환 번역
+Obx(() => Text('welcome'.trParams({'name': '홍길동'})))
+```
+
+실시간 동적 언어 변경:
+```dart
+// 한국어로 변경
+Get.locale = const Locale('ko', 'KR');
+
+// 영어로 변경
+Get.locale = const Locale('en', 'US');
 ```
 
 ---
