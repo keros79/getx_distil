@@ -150,6 +150,35 @@ void main() {
     expect(exception, anyOf(isA<FlutterError>(), isA<TypeError>()));
   });
 
+  testWidgets('Obx does not throw setState() during build when reactive state is changed during build phase', (WidgetTester tester) async {
+    final count = 0.obs;
+
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Column(
+          children: [
+            Obx(() => Text('Count: ${count.value}')),
+            Builder(
+              builder: (context) {
+                // Mutating state during the build phase of another widget
+                count.value = 10;
+                return const Text('Mutator');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+
+    // Verify no exception was thrown by checking tester.takeException
+    expect(tester.takeException(), null);
+
+    // Pump a frame to let the deferred post-frame callback apply the update
+    await tester.pump();
+    expect(find.text('Count: 10'), findsOneWidget);
+  });
+
   testWidgets('Scoped DI and isolated multi-instances test', (WidgetTester tester) async {
     // Nested view scopes with duplicate bindings
     await tester.pumpWidget(

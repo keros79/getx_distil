@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 
 typedef Disposer = void Function();
 typedef GetStateUpdate = void Function();
@@ -74,8 +75,19 @@ class GetListenable<T> implements RxInterface<T> {
 
   void refresh() {
     final list = List<GetStateUpdate>.from(_updaters);
-    for (final updater in list) {
-      updater();
+    final scheduler = SchedulerBinding.instance;
+    final phase = scheduler.schedulerPhase;
+
+    if (phase == SchedulerPhase.persistentCallbacks || phase == SchedulerPhase.midFrameMicrotasks) {
+      scheduler.addPostFrameCallback((_) {
+        for (final updater in list) {
+          updater();
+        }
+      });
+    } else {
+      for (final updater in list) {
+        updater();
+      }
     }
   }
 
