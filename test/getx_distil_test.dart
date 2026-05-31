@@ -625,6 +625,34 @@ void main() {
       Get.reset();
     });
 
+    testWidgets('Get.find detailed DI error message contains context path and service lists', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Builder(
+            builder: (context) {
+              expect(
+                () => Get.find<CounterController>(context),
+                throwsA(
+                  isA<FlutterError>().having(
+                    (e) => e.message,
+                    'message',
+                    allOf(
+                      contains('📍 Requested Context Widget: Builder'),
+                      contains('🌳 Search Path (Ancestor Widgets):'),
+                      contains('🌐 Registered Global Services:'),
+                      contains('🌟 Registered Immortal Services:'),
+                    ),
+                  ),
+                ),
+              );
+              return const Text('Test');
+            },
+          ),
+        ),
+      );
+    });
+
     test('Get.put and context-less Get.find resolves successfully', () {
       final controller = Get.put(CounterController());
       expect(controller.count.value, 0);

@@ -54,6 +54,7 @@ class CounterController extends GetxController {
 * **Nullable Rx (`Rxn<T>`) null 처리 완벽 지원**: `name.value = null`로 명시적 null 상태를 안전하게 주입할 수 있습니다.
 * **🛡️ Obx 내 비동기(Async/Future) 오용 차단**: `Obx` 빌더 내부에서 `async/await`나 `Future`를 반환하도록 작성하여 반응형 변수 추적 루프가 누락되는 조용한 버그(Silent tracking failures)를 방지하기 위해, `Future` 반환 감지 시 유용한 경고와 함께 명확한 `FlutterError`를 즉시 발생시킵니다.
 * **⚡ 빌드 단계 상태 변경 예외 방어 (setState() during build 방지)**: 위젯 트리 빌드/레이아웃 과정 중에 실수로 반응형 변수를 수정하더라도, 플러터 엔진이 충돌하는 대신 `SchedulerBinding`의 스케줄 상태를 자동으로 판별하고 UI 업데이트 스케줄을 다음 프레임 포스트 콜백으로 즉시 이월(Defer)하여 예외를 안전하게 예방합니다.
+* **🌳 Get.find DI 실패 시 지능형 디버깅 에러 가시성**: 상위 계층에 `BindingWidget` 등록을 잊었거나 tag 오타 등으로 주입 검색에 실패한 경우, 단순 "Not Found" 메시지가 아닌 **요청한 Context 위젯명**, **부모 조상 위젯 검색 경로(Ancestor Path)**, 그리고 **현재 메모리에 올라와 있는 전역 및 Immortal 서비스 리스트**를 시각적으로 출력하여 디버깅 비용을 극적으로 줄여줍니다.
 
 #### 🚨 Obx 사용 시 정밀 리빌드(Targeted Rebuild) 가이드
 * **Scaffold 전체를 Obx로 감싸지 마세요!**: 값이 변하지 않는 정적 UI 뼈대까지 통째로 리빌드되어 프레임 드랍이 발생할 수 있습니다.

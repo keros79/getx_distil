@@ -196,8 +196,27 @@ class Get {
       }
     }
 
+    final String contextWidgetName = context != null ? context.widget.runtimeType.toString() : 'Unknown';
+    final List<String> ancestors = [];
+    if (context != null) {
+      context.visitAncestorElements((element) {
+        ancestors.add(element.widget.runtimeType.toString());
+        return true;
+      });
+    }
+    final String searchPath = ancestors.isNotEmpty ? ancestors.join(' -> ') : 'N/A';
+    final List<String> globalKeys = _globalRegistry.keys.toList();
+    final List<Type> immortalKeys = BindingWidgetState.getImmortalKeys();
+
     throw FlutterError(
-      'Could not find any instance of type $T${tag != null ? ' with tag "$tag"' : ''} in either Widget Tree or Global Registry. '
+      'Could not find any instance of type $T${tag != null ? ' with tag "$tag"' : ''} in either Widget Tree or Global Registry.\n\n'
+      '📍 Requested Context Widget: $contextWidgetName\n'
+      '🌳 Search Path (Ancestor Widgets):\n'
+      '   $contextWidgetName -> $searchPath\n\n'
+      '🌐 Registered Global Services:\n'
+      '   ${globalKeys.isEmpty ? 'None' : globalKeys.join(', ')}\n\n'
+      '🌟 Registered Immortal Services:\n'
+      '   ${immortalKeys.isEmpty ? 'None' : immortalKeys.join(', ')}\n\n'
       'Make sure you registered it via Get.put() / Get.lazyPut() or wrapped your view with a BindingWidget.'
     );
   }
