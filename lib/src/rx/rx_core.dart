@@ -21,7 +21,7 @@ class ObxError implements Exception {
   @override
   String toString() {
     return """
-      [GetX Distil] The improper use of Obx has been detected.
+      [GetX] The improper use of Obx has been detected.
       You must insert at least one observable variable (Rx) into the Obx build scope, 
       otherwise it has no dependencies to rebuild on change.
       """;
@@ -78,7 +78,8 @@ class GetListenable<T> implements RxInterface<T> {
     final scheduler = SchedulerBinding.instance;
     final phase = scheduler.schedulerPhase;
 
-    if (phase == SchedulerPhase.persistentCallbacks || phase == SchedulerPhase.midFrameMicrotasks) {
+    if (phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks) {
       scheduler.addPostFrameCallback((_) {
         for (final updater in list) {
           updater();
@@ -185,7 +186,7 @@ class Notifier {
       final result = builder();
       if (result is Future) {
         throw FlutterError(
-          '[getx] Obx builder returned a Future. The Obx builder must be completely synchronous.\n'
+          '[GetX] Obx builder returned a Future. The Obx builder must be completely synchronous.\n'
           'Reading reactive variables inside an asynchronous block (like async/await or Future callbacks) '
           'causes reactive dependencies to be registered outside the active tracking frame, '
           'leading to untracked state updates and UI sync bugs.\n'
