@@ -49,7 +49,7 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,9 +65,9 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 20),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.05),
+                color: Colors.green.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.green.withOpacity(0.1)),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.1)),
               ),
               child: Column(
                 children: [
@@ -111,7 +111,7 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,9 +147,9 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
               margin: const EdgeInsets.only(top: 16),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.05),
+                color: Colors.red.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.redAccent.withOpacity(0.2)),
+                border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -49,7 +49,7 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,7 +66,7 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: active ? Colors.cyan.withOpacity(0.2) : Colors.grey.withOpacity(0.1),
+                    color: active ? Colors.cyan.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -110,7 +110,7 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? Colors.black26 : Colors.black.withOpacity(0.02),
+                color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.02),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -138,7 +138,7 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,7 +153,7 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.1),
+                  color: Colors.amber.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Obx(() => Text(
@@ -171,7 +171,7 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                   height: 44,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                      backgroundColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
                       foregroundColor: theme.colorScheme.onSurface,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       elevation: 0,
@@ -234,7 +234,7 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                       width: double.infinity,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.03),
+                        color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: FractionallySizedBox(
@@ -268,7 +268,7 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                       width: double.infinity,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.03),
+                        color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: FractionallySizedBox(

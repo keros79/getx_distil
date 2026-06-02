@@ -23,10 +23,13 @@ class AppTranslations extends Translations {
           // 1. Hub Start Page
           'test_list_title': 'Distil Test Bench',
           'test_list_subtitle': 'Explore lightweight reactive features and safety mechanisms',
+          'test_list_basic_rx_title': '1. Basic Rx & Actions',
           'test_list_basic_rx_desc': 'Observe simple reactive state and debounced triggers',
           'test_list_scoped_di_title': '2. Nested Controller Scope',
           'test_list_scoped_di_desc': 'Continuous page push test ensuring fully isolated controller instances per tree depth',
+          'test_list_safety_title': '3. Engine Safety Guard',
           'test_list_safety_desc': 'Build phase crash prevention and async Obx checks',
+          'test_list_pipeline_title': '4. Pipeline & Performance',
           'test_list_pipeline_desc': 'updateSequential FIFO streams and RxList benchmarking',
           'test_list_settings_card_title': '5. Extra Settings',
           'test_list_settings_card_desc': 'Configure application theme and localization preferences',
@@ -42,9 +45,11 @@ class AppTranslations extends Translations {
           'basic_rx_status_idle': 'Idle',
           'basic_rx_status_searching': 'Searching...',
           'basic_rx_status_success': 'Success',
+          'basic_rx_search_result': 'Result for "%s" (Processed at %s)',
           'basic_rx_list_title': 'Reactive RxList',
           'basic_rx_list_add_btn': 'Add Scoped Item',
           'basic_rx_list_empty': 'List is empty. Tap Add Item!',
+          'basic_rx_list_item_prefix': 'Item #%s',
 
           // 3. Course 2: Scoped DI Stack
           'nested_scope_appbar_title': 'DI Stack Level: %s',
@@ -87,10 +92,13 @@ class AppTranslations extends Translations {
           // 1. Hub Start Page
           'test_list_title': 'Distil 테스트 벤치',
           'test_list_subtitle': '경량 반응형 기능 및 엔진 안전장치를 탐색해 보세요',
+          'test_list_basic_rx_title': '1. 기본 Rx 및 액션',
           'test_list_basic_rx_desc': '간단한 반응형 상태 및 디바운스 워커(Worker)를 실습합니다',
           'test_list_scoped_di_title': '2. 컨트롤러 중첩 격리 테스트',
           'test_list_scoped_di_desc': '동일 페이지를 연속 Push할 때 깊이별로 컨트롤러 인스턴스가 독립 격리 및 자동 수거되는 과정을 검증합니다',
+          'test_list_safety_title': '3. 엔진 안전 가드',
           'test_list_safety_desc': '빌드 중 상태 수정 자가 치유와 비동기 Obx 방지 장치를 테스트합니다',
+          'test_list_pipeline_title': '4. 파이프라인 및 성능 벤치마크',
           'test_list_pipeline_desc': 'updateSequential FIFO 큐 보장 및 RxList 1만 건 대량 렌더링을 벤치마크합니다',
           'test_list_settings_card_title': '5. 기타 설정',
           'test_list_settings_card_desc': '화면 테마 및 다국어 등 기타 설정을 구성합니다',
@@ -106,9 +114,11 @@ class AppTranslations extends Translations {
           'basic_rx_status_idle': '대기 중',
           'basic_rx_status_searching': '검색 중...',
           'basic_rx_status_success': '검색 성공',
+          'basic_rx_search_result': '"%s"에 대한 검색 결과 (%s에 처리됨)',
           'basic_rx_list_title': '반응형 RxList 실습',
           'basic_rx_list_add_btn': '아이템 추가',
           'basic_rx_list_empty': '리스트가 비어 있습니다. 아이템을 추가해 보세요!',
+          'basic_rx_list_item_prefix': '아이템 #%s',
 
           // 3. Course 2: Scoped DI Stack
           'nested_scope_appbar_title': 'DI 스택 깊이: %s단계',

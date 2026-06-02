@@ -39,7 +39,7 @@ class BasicRxController extends GetxController {
   // Add an item to RxList
   void addRxItem() {
     _itemIndex++;
-    rxListItems.add('Item #$_itemIndex');
+    rxListItems.add('$_itemIndex');
     addLog('RxList: Added "Item #$_itemIndex"');
   }
 
@@ -47,7 +47,7 @@ class BasicRxController extends GetxController {
   void removeRxItem(int index) {
     if (index >= 0 && index < rxListItems.length) {
       final removed = rxListItems.removeAt(index);
-      addLog('RxList: Removed "$removed"');
+      addLog('RxList: Removed "Item #$removed"');
     }
   }
 
@@ -64,7 +64,7 @@ class BasicRxController extends GetxController {
     // Simulate search success after 1 second
     Timer(const Duration(seconds: 1), () {
       if (searchQuery.value == query) {
-        searchResult.value = 'Result for "${query.toUpperCase()}" (Processed at ${DateTime.now().toString().substring(11, 19)})';
+        searchResult.value = 'basic_rx_search_result'.trArgs([query.toUpperCase(), DateTime.now().toString().substring(11, 19)]);
         searchStatus.value = 'Success';
         addLog('Search Finished for "$query"');
       }

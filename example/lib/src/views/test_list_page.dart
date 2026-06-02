@@ -25,10 +25,10 @@ class TestListPage extends StatelessWidget {
                   // 1. Basic Rx & Actions
                   _buildMenuCard(
                     context,
-                    title: '1. Basic Rx & Actions',
+                    title: 'test_list_basic_rx_title'.tr,
                     subtitle: 'test_list_basic_rx_desc'.tr,
                     route: '/basic-rx',
-                    borderColor: Colors.amberAccent.withOpacity(0.4),
+                    borderColor: Colors.amberAccent.withValues(alpha: 0.4),
                   ),
                   const SizedBox(height: 16),
 
@@ -38,27 +38,27 @@ class TestListPage extends StatelessWidget {
                     title: 'test_list_scoped_di_title'.tr,
                     subtitle: 'test_list_scoped_di_desc'.tr,
                     route: '/nested-scope',
-                    borderColor: Colors.purpleAccent.withOpacity(0.4),
+                    borderColor: Colors.purpleAccent.withValues(alpha: 0.4),
                   ),
                   const SizedBox(height: 16),
 
                   // 3. Engine Safety Guard
                   _buildMenuCard(
                     context,
-                    title: '3. Engine Safety Guard',
+                    title: 'test_list_safety_title'.tr,
                     subtitle: 'test_list_safety_desc'.tr,
                     route: '/safety',
-                    borderColor: Colors.greenAccent.withOpacity(0.4),
+                    borderColor: Colors.greenAccent.withValues(alpha: 0.4),
                   ),
                   const SizedBox(height: 16),
 
                   // 4. Pipeline & Performance
                   _buildMenuCard(
                     context,
-                    title: '4. Pipeline & Performance',
+                    title: 'test_list_pipeline_title'.tr,
                     subtitle: 'test_list_pipeline_desc'.tr,
                     route: '/concurrent',
-                    borderColor: Colors.cyanAccent.withOpacity(0.4),
+                    borderColor: Colors.cyanAccent.withValues(alpha: 0.4),
                   ),
                   const SizedBox(height: 16),
 
@@ -68,7 +68,7 @@ class TestListPage extends StatelessWidget {
                     title: 'test_list_settings_card_title'.tr,
                     subtitle: 'test_list_settings_card_desc'.tr,
                     route: '/settings',
-                    borderColor: Colors.pinkAccent.withOpacity(0.4),
+                    borderColor: Colors.pinkAccent.withValues(alpha: 0.4),
                   ),
                 ],
               ),

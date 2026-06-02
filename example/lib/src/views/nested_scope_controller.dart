@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:getx_distil/get.dart';
 
 class NestedScopeController extends GetxController {
@@ -16,12 +17,12 @@ class NestedScopeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    print('NestedScopeController [$instanceId] (Depth: $depth) initialized');
+    debugPrint('NestedScopeController [$instanceId] (Depth: $depth) initialized');
   }
 
   @override
   void onClose() {
-    print('NestedScopeController [$instanceId] (Depth: $depth) disposed (GC)');
+    debugPrint('NestedScopeController [$instanceId] (Depth: $depth) disposed (GC)');
     super.onClose();
   }
 }

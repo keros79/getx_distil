@@ -57,7 +57,7 @@ class NestedScopePage extends GetView<NestedScopeController> {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         children: [
@@ -71,7 +71,7 @@ class NestedScopePage extends GetView<NestedScopeController> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.purple.withOpacity(0.1),
+                  color: Colors.purple.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Obx(() => Text(

@@ -53,7 +53,7 @@ class BasicRxPage extends GetView<BasicRxController> {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         children: [
@@ -67,7 +67,7 @@ class BasicRxPage extends GetView<BasicRxController> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
+                  color: primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Obx(() => Text(
@@ -118,7 +118,7 @@ class BasicRxPage extends GetView<BasicRxController> {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,7 +129,7 @@ class BasicRxPage extends GetView<BasicRxController> {
               hintText: 'basic_rx_search_hint'.tr,
               prefixIcon: const Icon(Icons.search_rounded),
               filled: true,
-              fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+              fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -173,7 +173,7 @@ class BasicRxPage extends GetView<BasicRxController> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? Colors.black26 : Colors.black.withOpacity(0.02),
+                color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.02),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -193,7 +193,7 @@ class BasicRxPage extends GetView<BasicRxController> {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,7 +213,7 @@ class BasicRxPage extends GetView<BasicRxController> {
                 padding: const EdgeInsets.symmetric(vertical: 32),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.black26 : Colors.black.withOpacity(0.02),
+                  color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.02),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Obx(() => Text(
@@ -226,15 +226,15 @@ class BasicRxPage extends GetView<BasicRxController> {
             return Container(
               constraints: const BoxConstraints(maxHeight: 200),
               decoration: BoxDecoration(
-                color: isDark ? Colors.black26 : Colors.black.withOpacity(0.02),
+                color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.02),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.03)),
+                border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
               ),
               child: ListView.separated(
                 shrinkWrap: true,
                 padding: const EdgeInsets.all(8),
                 itemCount: items.length,
-                separatorBuilder: (_, __) => const Divider(height: 8, color: Colors.white10),
+                separatorBuilder: (_, _) => const Divider(height: 8, color: Colors.white10),
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
@@ -242,7 +242,7 @@ class BasicRxPage extends GetView<BasicRxController> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          items[index],
+                          'basic_rx_list_item_prefix'.trArgs([items[index]]),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, fontFamily: 'monospace'),
                         ),
                         IconButton(

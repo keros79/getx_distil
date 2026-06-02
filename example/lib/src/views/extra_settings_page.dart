@@ -54,7 +54,7 @@ class ExtraSettingsPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,7 +68,7 @@ class ExtraSettingsPage extends StatelessWidget {
             final darkActive = config.isDarkMode.value;
             return SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-              activeColor: Colors.purpleAccent,
+              activeThumbColor: Colors.purpleAccent,
               title: Row(
                 children: [
                   Icon(
@@ -100,7 +100,7 @@ class ExtraSettingsPage extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.cardTheme.color,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+          border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,13 +121,13 @@ class ExtraSettingsPage extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
                         color: currentLanguageCode == 'en'
-                            ? Colors.purple.withOpacity(0.1)
+                            ? Colors.purple.withValues(alpha: 0.1)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: currentLanguageCode == 'en'
                               ? Colors.purpleAccent
-                              : (isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+                              : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
                           width: currentLanguageCode == 'en' ? 1.5 : 1,
                         ),
                       ),
@@ -158,13 +158,13 @@ class ExtraSettingsPage extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
                         color: currentLanguageCode == 'ko'
-                            ? Colors.purple.withOpacity(0.1)
+                            ? Colors.purple.withValues(alpha: 0.1)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: currentLanguageCode == 'ko'
                               ? Colors.purpleAccent
-                              : (isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+                              : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
                           width: currentLanguageCode == 'ko' ? 1.5 : 1,
                         ),
                       ),
