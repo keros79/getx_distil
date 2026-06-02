@@ -1,7 +1,8 @@
 name: getx_distil
 description: "A distilled, high-performance micro-state management and scoped DI engine for Flutter."
 version: 1.0.0
-homepage:
+homepage: https://github.com/keros79/getx_distil
+repository: https://github.com/keros79/getx_distil
 
 environment:
   sdk: ^3.12.0
