@@ -24,6 +24,7 @@ However, as the Flutter ecosystem matured toward declarative routing (like `GoRo
 * 🧵 **FIFO Asynchronous Pipeline (`updateSequential`)**: Introduces a clean sequential queue to prevent critical race conditions and state inversion during high-frequency async operations.
 * 📋 **Batched Loop Mutations (`RxList`)**: Instead of triggering expensive UI rebuilds on every single mutation inside a loop, `RxList` aggregates changes and schedules a single microtask UI refresh.
 * 🔍 **High-Visibility DI Debugging**: When `Get.find` fails, it no longer throws a cryptic message. It prints a comprehensive debug layout showing the requested context name, the exact parent ancestor widget hierarchy path, and active services in memory.
+* ⚡ **High-Performance Fast-Path Tracking (`Notifier.isTracking`)**: In original GetX, reading any reactive variable (even in normal business logic loops or background tasks outside of `Obx` widgets) triggers a lookup of the global tracking proxy. `getx_distil` introduces a lightweight static boolean flag `isTracking`. Outside of active `Obx` build frames, this flag is `false`, bypassing the entire proxy lookup and dependency registration pipeline. This dramatically reduces CPU cycles during heavy calculation loops or traversals.
 
 ---
 
