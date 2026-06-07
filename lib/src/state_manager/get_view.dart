@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:meta/meta.dart';
 import '../../get.dart';
 
 class GetViewElement<T> extends StatelessElement {
@@ -6,13 +7,21 @@ class GetViewElement<T> extends StatelessElement {
 
   @override
   Widget build() {
-    GetView._contexts[widget] = this;
+    GetView.contexts[widget] = this;
     return super.build();
   }
 
   @override
+  void update(StatelessWidget newWidget) {
+    final oldWidget = widget;
+    GetView.contexts[oldWidget] = null;
+    super.update(newWidget);
+    GetView.contexts[newWidget] = this;
+  }
+
+  @override
   void unmount() {
-    GetView._contexts[widget] = null;
+    GetView.contexts[widget] = null;
     super.unmount();
   }
 }
@@ -20,10 +29,11 @@ class GetViewElement<T> extends StatelessElement {
 abstract class GetView<T> extends StatelessWidget {
   const GetView({super.key});
 
-  static final _contexts = Expando<BuildContext>();
+  @visibleForTesting
+  static final contexts = Expando<BuildContext>();
 
   T get controller {
-    final context = _contexts[this];
+    final context = contexts[this];
     if (context == null) {
       throw FlutterError(
         'GetView<$T>.controller was called outside of the build method, or before the build method started.'

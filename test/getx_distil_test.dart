@@ -73,6 +73,15 @@ class SiblingControllerA extends GetxController {
 
 class SiblingControllerB extends GetxController {}
 
+class MyGetView extends GetView<CounterController> {
+  const MyGetView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() => Text('Count: ${controller.count.value}'));
+  }
+}
+
 void main() {
   test('Rx Core Getter & Setter features', () {
     final count = 10.obs;
@@ -924,6 +933,122 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Brightness: dark'), findsOneWidget);
+    });
+  });
+
+  group('GetView Tests', () {
+    setUp(() {
+      Get.reset();
+    });
+
+    testWidgets('GetView resolves controller successfully via BuildContext', (WidgetTester tester) async {
+      final counter = CounterController();
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: BindingWidget(
+            bindings: [
+              Bind<CounterController>(() => counter),
+            ],
+            child: const MyGetView(),
+          ),
+        ),
+      );
+
+      expect(find.text('Count: 0'), findsOneWidget);
+
+      counter.count.value = 5;
+      await tester.pump();
+
+      expect(find.text('Count: 5'), findsOneWidget);
+    });
+
+    testWidgets('GetView clears contexts on widget update (prevents memory leak)', (WidgetTester tester) async {
+      final counter = CounterController();
+      GetView<CounterController>? originalWidget;
+      GetView<CounterController>? updatedWidget;
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: BindingWidget(
+            bindings: [
+              Bind<CounterController>(() => counter),
+            ],
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                final view = MyGetView(key: const ValueKey('view'));
+                if (originalWidget == null) {
+                  originalWidget = view;
+                } else {
+                  updatedWidget = view;
+                }
+                return Column(
+                  children: [
+                    view,
+                    ElevatedButton(
+                      onPressed: () => setState(() {}),
+                      child: const Text('Rebuild'),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      // Verify original widget context is registered
+      final contextsMap = GetView.contexts;
+      expect(contextsMap[originalWidget!], isNotNull);
+
+      // Trigger rebuild to update widget
+      await tester.tap(find.text('Rebuild'));
+      await tester.pump();
+
+      // Verify a new widget was created and the old one cleared
+      expect(updatedWidget, isNotNull);
+      expect(updatedWidget, isNot(originalWidget));
+      expect(contextsMap[updatedWidget!], isNotNull);
+      expect(contextsMap[originalWidget!], isNull, reason: 'Old widget context must be cleared to prevent memory leak');
+    });
+
+    testWidgets('GetView clears context on unmount', (WidgetTester tester) async {
+      final counter = CounterController();
+      GetView<CounterController>? widgetInstance;
+      bool showView = true;
+      late StateSetter setViewState;
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: BindingWidget(
+            bindings: [
+              Bind<CounterController>(() => counter),
+            ],
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                setViewState = setState;
+                if (!showView) return const SizedBox.shrink();
+                widgetInstance = MyGetView(key: const ValueKey('view'));
+                return widgetInstance!;
+              },
+            ),
+          ),
+        ),
+      );
+
+      final contextsMap = GetView.contexts;
+      expect(contextsMap[widgetInstance!], isNotNull);
+
+      // Unmount the widget
+      setViewState(() {
+        showView = false;
+      });
+      await tester.pump();
+
+      expect(contextsMap[widgetInstance!], isNull, reason: 'Widget context must be cleared when unmounted');
     });
   });
 }
