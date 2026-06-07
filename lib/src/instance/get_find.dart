@@ -196,6 +196,14 @@ class Get {
       }
     }
 
+    // 4. Global weak registry lookup (fallback for scoped controllers when context is null)
+    if (tag == null) {
+      final weakInstance = BindingWidgetState.getWeak<T>();
+      if (weakInstance != null) {
+        return weakInstance;
+      }
+    }
+
     final String contextWidgetName = context != null ? context.widget.runtimeType.toString() : 'Unknown';
     final List<String> ancestors = [];
     if (context != null) {

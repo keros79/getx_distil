@@ -56,6 +56,23 @@ class RegularController extends GetxController {
 
 class ApiController extends GetxController with StateMixin<String> {}
 
+class SiblingControllerA extends GetxController {
+  bool resolvedSiblingDuringClose = false;
+
+  @override
+  void onClose() {
+    try {
+      final sibling = Get.find<SiblingControllerB>();
+      resolvedSiblingDuringClose = (sibling != null);
+    } catch (e) {
+      resolvedSiblingDuringClose = false;
+    }
+    super.onClose();
+  }
+}
+
+class SiblingControllerB extends GetxController {}
+
 void main() {
   test('Rx Core Getter & Setter features', () {
     final count = 10.obs;
@@ -767,6 +784,102 @@ void main() {
       // Now lookup WITHOUT context - should successfully resolve via getImmortal
       final resolved = Get.find<DatabaseService>();
       expect(resolved, dbService);
+    });
+
+    testWidgets('Context-less lookup resolves scoped controller via weak registry', (WidgetTester tester) async {
+      final controller = CounterController();
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: BindingWidget(
+            bindings: [
+              Bind<CounterController>(() => controller),
+            ],
+            child: Builder(
+              builder: (context) {
+                Get.find<CounterController>(context);
+                return const Text('Active Scope');
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      final resolved = Get.find<CounterController>();
+      expect(resolved, controller);
+    });
+
+    testWidgets('Context-less lookup fails after BindingWidget is disposed (prevents zombie reference)', (WidgetTester tester) async {
+      final controller = CounterController();
+      bool showChild = true;
+      late StateSetter setChildState;
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              setChildState = setState;
+              if (!showChild) return const SizedBox.shrink();
+
+              return BindingWidget(
+                bindings: [
+                  Bind<CounterController>(() => controller),
+                ],
+                child: Builder(
+                  builder: (context) {
+                    Get.find<CounterController>(context);
+                    return const Text('Active Scope');
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      await tester.pump();
+      expect(Get.find<CounterController>(), controller);
+
+      setChildState(() {
+        showChild = false;
+      });
+      await tester.pump();
+
+      expect(() => Get.find<CounterController>(), throwsA(isA<FlutterError>()));
+    });
+
+    testWidgets('Disposal sequence allows cross-controller lookup during onClose (Complement 1)', (WidgetTester tester) async {
+      final controllerA = SiblingControllerA();
+      final controllerB = SiblingControllerB();
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: BindingWidget(
+            bindings: [
+              Bind<SiblingControllerA>(() => controllerA),
+              Bind<SiblingControllerB>(() => controllerB),
+            ],
+            child: Builder(
+              builder: (context) {
+                Get.find<SiblingControllerA>(context);
+                Get.find<SiblingControllerB>(context);
+                return const Text('Active Scope');
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      await tester.pumpWidget(const SizedBox.shrink());
+
+      expect(controllerA.resolvedSiblingDuringClose, true);
     });
 
     testWidgets('GetMaterialApp binds root-level dependencies and propagates them', (WidgetTester tester) async {

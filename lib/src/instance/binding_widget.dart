@@ -33,6 +33,49 @@ class BindingWidgetState extends State<BindingWidget> {
   final Map<Type, Object> _instances = {};
   static final Map<Type, Object> _immortalInstances = {};
 
+  static final List<BindingWidgetState> _activeStates = [];
+  static final Map<Type, List<WeakReference<Object>>> _weakRegistry = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _activeStates.add(this);
+  }
+
+  static T? getWeak<T>() {
+    final list = _weakRegistry[T];
+    if (list != null && list.isNotEmpty) {
+      list.removeWhere((ref) => ref.target == null);
+      if (list.isNotEmpty) {
+        return list.last.target as T?;
+      }
+    }
+    return findOrInitializeInActiveStates<T>();
+  }
+
+  static T? findOrInitializeInActiveStates<T>() {
+    for (final state in _activeStates.reversed) {
+      if (state.hasBinding<T>()) {
+        return state.getInstance<T>();
+      }
+    }
+    return null;
+  }
+
+  static void _registerWeak(Type type, Object instance) {
+    _weakRegistry.putIfAbsent(type, () => []).add(WeakReference(instance));
+  }
+
+  static void _unregisterWeak(Type type, Object instance) {
+    final list = _weakRegistry[type];
+    if (list != null) {
+      list.removeWhere((ref) => ref.target == null || ref.target == instance);
+      if (list.isEmpty) {
+        _weakRegistry.remove(type);
+      }
+    }
+  }
+
   static T? getImmortal<T>() {
     if (_immortalInstances.containsKey(T)) {
       return _immortalInstances[T] as T?;
@@ -70,6 +113,7 @@ class BindingWidgetState extends State<BindingWidget> {
       _immortalInstances[T] = instance;
     } else {
       _instances[T] = instance;
+      _registerWeak(T, instance);
     }
 
     if (instance is GetLifeCycleMixin) {
@@ -81,12 +125,17 @@ class BindingWidgetState extends State<BindingWidget> {
 
   @override
   void dispose() {
+    _activeStates.remove(this);
+    // Run onDelete() on all instances first while they are still accessible in the weak registry
     for (final instance in _instances.values) {
-      if (instance is GetLifeCycleMixin) {
-        if (instance is GetxService) continue;
+      if (instance is GetLifeCycleMixin && instance is! GetxService) {
         instance.onDelete();
       }
     }
+    // Batch remove from local instances map and weak registry
+    _instances.forEach((type, instance) {
+      _unregisterWeak(type, instance);
+    });
     _instances.clear();
     super.dispose();
   }
