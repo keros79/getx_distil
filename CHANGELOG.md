@@ -1,3 +1,9 @@
+## 1.0.1
+
+* **Context-less Lookup via Weak References**: Supported context-less `Get.find<T>()` fallback for widget tree-scoped controllers by storing weak references in a static registry (`_weakRegistry`).
+* **Memory Safety & Zombie Prevention**: Automated explicit unregistration inside `BindingWidgetState.dispose()` to ensure GC timing does not return dead/zombie controllers, preventing memory leaks.
+* **Disposal Sequence Safe Teardown**: Updated disposal order to invoke all controllers' `onDelete()` hooks first before removing them from the weak registry, enabling safe cross-controller lookups during onClose/destruction.
+
 ## 1.0.0
 
 * **Initial Stable Release** of `getx_distil`!
