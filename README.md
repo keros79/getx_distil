@@ -78,6 +78,36 @@ final specialController = Get.find<CounterController>(null, 'special_counter');
 
 > [!TIP]
 > `getx_distil` features a **Hybrid DI** system. If you provide a `BuildContext` like `Get.find(context)`, it will prioritize widget tree-scoped lookup (`BindingWidget`). If it is not found, it seamlessly falls back to resolving the dependency from the global registry.
+> 
+> Furthermore, since v1.0.1, if a controller is registered via `BindingWidget` and has already been instantiated in the widget tree, you can retrieve it **without a context** using a simple `Get.find<T>()` call via a safe, non-leaking static weak reference cache.
+
+> [!WARNING]
+> **Best Practice for Context-less Lookups inside Controllers**
+> 
+> To prevent race conditions or `Could not find any instance...` errors during construction phase, **never** execute context-less `Get.find()` inside class field initializers or constructors (before `onInit` has run). Sibling or parent controllers might not be fully instantiated yet.
+> 
+> Instead, defer the lookup using **`late` initializers**, **getters**, or perform them inside **`onInit()`**:
+> 
+> ```dart
+> class ChildController extends GetxController {
+>   // ❌ BAD: Runs immediately during constructor execution, causing race conditions
+>   // final parent = Get.find<ParentController>();
+> 
+>   // ✅ GOOD (Option 1): Evaluated lazily when first accessed
+>   late final parent = Get.find<ParentController>();
+> 
+>   // ✅ GOOD (Option 2): Evaluated dynamically on demand
+>   ParentController get parent => Get.find<ParentController>();
+> 
+>   // ✅ GOOD (Option 3): Safely resolved during lifecycle hook
+>   // late final ParentController parent;
+>   // @override
+>   // void onInit() {
+>   //   super.onInit();
+>   //   parent = Get.find<ParentController>();
+>   // }
+> }
+> ```
 
 ---
 

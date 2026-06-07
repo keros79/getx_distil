@@ -78,6 +78,36 @@ final specialController = Get.find<CounterController>(null, 'special_counter');
 
 > [!TIP]
 > `getx_distil`은 **하이브리드 DI**를 지원합니다. `Get.find(context)`와 같이 `BuildContext`를 함께 전달하면 화면 위젯 트리 범위의 DI(`BindingWidget`)에서 인스턴스를 우선 탐색하며, 존재하지 않을 경우 자동으로 전역 범위(Global Registry)를 찾아 인스턴스를 반환합니다.
+> 
+> 또한 v1.0.1부터는 `BindingWidget`에 등록된 스코프 컨트롤러라도 위젯 트리에서 한 번 생성되었다면, 메모리 누수가 없는 안전한 약한 참조 캐시(Weak Reference Cache)를 통해 **`BuildContext` 없이 `Get.find<T>()` 호출만으로 조회**할 수 있습니다.
+
+> [!WARNING]
+> **컨트롤러 내부에서 Context 없이 의존성 조회 시 권장 사항 (Best Practice)**
+> 
+> 인스턴스 생성 단계의 레이스 컨디션 및 `Could not find any instance...` 에러를 방지하려면, **멤버 변수 선언 시점이나 생성자 본문 내에서 즉시 context 없이 `Get.find()`를 수행하지 마세요.** (의존하는 다른 컨트롤러가 아직 생성 완료되지 않았을 수 있습니다.)
+> 
+> 대신 아래와 같이 **`late` 초기화**, **`getter`**, 혹은 **`onInit()`** 생명주기 메서드 안에서 조회를 지연 수행하는 것을 강력히 권장합니다.
+> 
+> ```dart
+> class ChildController extends GetxController {
+>   // ❌ 비권장: 생성자 실행 단계에서 즉시 Get.find가 돌아 레이스 컨디션 유발 위험
+>   // final parent = Get.find<ParentController>();
+> 
+>   // ✅ 권장 대안 1: 처음 접근해 사용되는 시점에 지연 평가(Lazy)하여 탐색
+>   late final parent = Get.find<ParentController>();
+> 
+>   // ✅ 권장 대안 2: 호출될 때마다 동적으로 탐색
+>   ParentController get parent => Get.find<ParentController>();
+> 
+>   // ✅ 권장 대안 3: 컨트롤러 생명주기가 안착된 시점에 탐색
+>   // late final ParentController parent;
+>   // @override
+>   // void onInit() {
+>   //   super.onInit();
+>   //   parent = Get.find<ParentController>();
+>   // }
+> }
+> ```
 
 ---
 
