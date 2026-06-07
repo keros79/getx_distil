@@ -1,3 +1,9 @@
+## 1.0.3
+
+* **Obx Missing Rx Warning**: Converted the `Obx` missing reactive variable exception to a debug warning to avoid unnecessary crashes.
+* **BindingWidget Documentation Refinement**: Documented `BindingWidget`'s core design goal of isolating controllers for concurrent multi-instance child views.
+* **Expanded Rx Examples**: Added comprehensive documentation for various Rx types (primitives, nullables, collection auto-batching, custom objects) to READMEs.
+
 ## 1.0.2
 
 * **GetView Memory Leak Resolution**: Overrode the `update` lifecycle in `GetViewElement` to clear the `Expando` build context reference of the old widget, preventing unmounted element trees from leaking.
