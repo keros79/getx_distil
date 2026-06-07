@@ -1,3 +1,8 @@
+## 1.0.2
+
+* **GetView Memory Leak Resolution**: Overrode the `update` lifecycle in `GetViewElement` to clear the `Expando` build context reference of the old widget, preventing unmounted element trees from leaking.
+* **Enhanced Testing Support**: Promoted `GetView.contexts` to testing-visible API (`@visibleForTesting`) and added comprehensive test cases verifying resolution, update, and unmount lifecycles.
+
 ## 1.0.1
 
 * **Context-less Lookup via Weak References**: Supported context-less `Get.find<T>()` fallback for widget tree-scoped controllers by storing weak references in a static registry (`_weakRegistry`).
