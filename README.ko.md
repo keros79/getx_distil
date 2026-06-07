@@ -50,6 +50,22 @@ class CounterController extends GetxController {
 Obx(() => Text('${controller.count.value}'));
 ```
 
+> [!WARNING]
+> **주의 (Obx 분기 처리 팁)**: `Obx` 내부에 반응형 변수(`Rx`)가 전혀 호출되지 않는 분기(예: 외부 일반 변수에 의한 조건문 분기)가 실행될 경우, 의존성 감지 누수나 예외가 발생할 수 있습니다. 따라서 **`Obx`는 실제 반응형 변수를 표현하는 최소한의 영역에만 감싸는 것**을 강력히 권장합니다.
+> 
+> ```dart
+> // ❌ 피해야 할 패턴 (로그인 실패 분기 시 Rx 접근이 없어 에러 발생 가능)
+> Obx(() => isLoggedIn 
+>     ? Text(controller.userName.value) // 로그인 성공 시에만 Rx 엑세스
+>     : const Text('로그인이 필요합니다.') // 로그인 안 됐을 때 Rx 엑세스 없음 -> 에러 유발
+> )
+> 
+> //  권장 패턴 (Obx의 역할을 반응형 바인딩 위젯으로 국한)
+> isLoggedIn 
+>     ? Obx(() => Text(controller.userName.value)) // 반응형 필요한 곳만 Obx 적용
+>     : const Text('로그인이 필요합니다.')
+> ```
+
 ---
 
 ### 2. 🚀 전역/클래식 의존성 주입 (`Get.put` & `Get.find`)

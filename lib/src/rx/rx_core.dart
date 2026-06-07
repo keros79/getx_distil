@@ -195,7 +195,13 @@ class Notifier {
         );
       }
       if (data.disposers.isEmpty && data.throwException) {
-        throw const ObxError();
+        assert(() {
+          debugPrint(
+            '[GetX] Warning: No observable variables (Rx) were detected inside Obx. '
+            'This Obx widget will behave like a static widget and will not rebuild on state changes.'
+          );
+          return true;
+        }());
       }
       return result;
     } finally {

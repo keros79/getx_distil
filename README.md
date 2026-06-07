@@ -50,6 +50,24 @@ In your View layer (pinpoint rebuilds):
 Obx(() => Text('${controller.count.value}'));
 ```
 
+> [!WARNING]
+> **Best Practice for Obx Conditional Branching**
+> 
+> If a conditional branch inside `Obx` resolves in a frame where zero reactive variables (`Rx`) are read (e.g., evaluating an external boolean condition), it might skip dependency tracking or output a warning. Therefore, **always wrap only the smallest target widget that actually displays the reactive variable**.
+> 
+> ```dart
+> // ❌ BAD (Skipping Rx access on login failure branch can cause tracking leak or warnings)
+> Obx(() => isLoggedIn 
+>     ? Text(controller.userName.value) // Accesses Rx only on login success
+>     : const Text('Login Required') // No Rx access on login failure -> triggers warning
+> )
+> 
+> // ✅ GOOD (Obx scope is strictly limited to the widget requiring reactivity)
+> isLoggedIn 
+>     ? Obx(() => Text(controller.userName.value)) // Apply Obx only where reactive state is needed
+>     : const Text('Login Required')
+> ```
+
 ---
 
 ### 2. 🚀 Global/Classic Dependency Injection (`Get.put` & `Get.find`)
