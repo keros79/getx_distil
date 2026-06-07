@@ -88,24 +88,30 @@ final specialController = Get.find<CounterController>(null, 'special_counter');
 > 
 > 대신 아래와 같이 **`late` 초기화**, **`getter`**, 혹은 **`onInit()`** 생명주기 메서드 안에서 조회를 지연 수행하는 것을 강력히 권장합니다.
 > 
+> **대안 1: `late` 키워드 사용 (처음 접근해 사용되는 시점에 지연 평가)**
 > ```dart
 > class ChildController extends GetxController {
->   // ❌ 비권장: 생성자 실행 단계에서 즉시 Get.find가 돌아 레이스 컨디션 유발 위험
->   // final parent = Get.find<ParentController>();
-> 
->   // ✅ 권장 대안 1: 처음 접근해 사용되는 시점에 지연 평가(Lazy)하여 탐색
 >   late final parent = Get.find<ParentController>();
+> }
+> ```
 > 
->   // ✅ 권장 대안 2: 호출될 때마다 동적으로 탐색
+> **대안 2: `getter` 사용 (호출될 때마다 동적으로 탐색)**
+> ```dart
+> class ChildController extends GetxController {
 >   ParentController get parent => Get.find<ParentController>();
+> }
+> ```
 > 
->   // ✅ 권장 대안 3: 컨트롤러 생명주기가 안착된 시점에 탐색
->   // late final ParentController parent;
->   // @override
->   // void onInit() {
->   //   super.onInit();
->   //   parent = Get.find<ParentController>();
->   // }
+> **대안 3: `onInit()` 사용 (컨트롤러 생명주기가 안착된 안전한 시점에 탐색)**
+> ```dart
+> class ChildController extends GetxController {
+>   late final ParentController parent;
+> 
+>   @override
+>   void onInit() {
+>     super.onInit();
+>     parent = Get.find<ParentController>();
+>   }
 > }
 > ```
 

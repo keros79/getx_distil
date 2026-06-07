@@ -88,24 +88,30 @@ final specialController = Get.find<CounterController>(null, 'special_counter');
 > 
 > Instead, defer the lookup using **`late` initializers**, **getters**, or perform them inside **`onInit()`**:
 > 
+> **Option 1: Using `late` (Evaluated lazily when first accessed)**
 > ```dart
 > class ChildController extends GetxController {
->   // ❌ BAD: Runs immediately during constructor execution, causing race conditions
->   // final parent = Get.find<ParentController>();
-> 
->   // ✅ GOOD (Option 1): Evaluated lazily when first accessed
 >   late final parent = Get.find<ParentController>();
+> }
+> ```
 > 
->   // ✅ GOOD (Option 2): Evaluated dynamically on demand
+> **Option 2: Using getter (Evaluated dynamically on demand)**
+> ```dart
+> class ChildController extends GetxController {
 >   ParentController get parent => Get.find<ParentController>();
+> }
+> ```
 > 
->   // ✅ GOOD (Option 3): Safely resolved during lifecycle hook
->   // late final ParentController parent;
->   // @override
->   // void onInit() {
->   //   super.onInit();
->   //   parent = Get.find<ParentController>();
->   // }
+> **Option 3: Using `onInit()` (Safely resolved during lifecycle hook)**
+> ```dart
+> class ChildController extends GetxController {
+>   late final ParentController parent;
+> 
+>   @override
+>   void onInit() {
+>     super.onInit();
+>     parent = Get.find<ParentController>();
+>   }
 > }
 > ```
 
