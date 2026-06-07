@@ -18,7 +18,7 @@ Flutter를 위한 **고성능 마이크로 상태 관리 및 트리 스코프 �
 
 ## 📊 핵심 개선 사항
 
-* 🌳 **100% 트리 스코프 DI 라이프사이클**: 수동으로 `Get.delete()`를 호출해야 하는 번거로움을 완전히 없앴습니다. 컨트롤러들은 `BindingWidget`을 사용해 위젯 트리에 수명 주기가 엄격하게 묶입니다. 화면 위젯이 트리에서 내려가면(unmount), 컨트롤러는 자동으로 안전하게 가비지 컬렉션(Auto-GC)됩니다.
+* 🌳 **100% 트리 스코프 DI 라이프사이클**: `BindingWidget`을 통해 컨트롤러를 각각의 뷰(View)에 직접 종속시킵니다. 이는 동일한 자식 뷰/컨트롤러 쌍을 동시에 여러 개 띄워야 하는 경우, 각 컨트롤러가 서로 간섭하지 않고 독립적으로 동작하도록 설계되었습니다. 또한 수동 `Get.delete()` 없이 위젯이 트리에서 제거될 때 자동으로 안전하게 가비지 컬렉션(Auto-GC)됩니다.
 * 🛡️ **빌드 단계 상태 변경 자가 치유**: 위젯 트리가 빌드되거나 레이아웃을 잡는 도중에 반응형 상태를 수정하면 일반적으로 Flutter 엔진은 `setState() during build` 치명적 크래시를 유발합니다. `getx_distil`은 이를 스스로 감지하고 UI 업데이트를 다음 포스트 프레임 콜백 큐로 알아서 안전하게 지연 처리합니다.
 * 🛑 **엄격한 비동기 Obx 검증**: `Obx` 빌더 콜백 내부에서 직접 `async/await`를 사용하는 것은 반응형 추적 고리를 끊어버리는 안티 패턴입니다. `getx_distil`은 이 실수를 실시간으로 탐지하여, 조용히 오동작하는 대신 명확한 경고가 담긴 `FlutterError`를 던져 줍니다.
 * 🧵 **FIFO 비동기 파이프라인 (`updateSequential`)**: 고주파 비동기 데이터 갱신 시 발생하는 크리티컬한 데이터 순서 뒤바뀜 및 레이스 컨디션 문제를 방지하기 위해 정교한 순차 처리 대기 큐를 내장했습니다.
@@ -34,13 +34,42 @@ Flutter를 위한 **고성능 마이크로 상태 관리 및 트리 스코프 �
 보일러플레이트가 전혀 없는 극도의 간결함으로 최하위 단말 위젯 단위 리빌드를 제어합니다.
 
 ```dart
-class CounterController extends GetxController {
-  final count = 0.obs;             // RxInt
-  final name = Rxn<String>();      // 안전한 Nullable Rx
+class User {
+  String name;
+  User({required this.name});
+}
 
-  void increment() {
-    count.value++;                 // 값 갱신 시 알아서 화면 변경 통지
+class CounterController extends GetxController {
+  // 1. 기본 타입 반응형 변수 (Primitive Observables)
+  final count = 0.obs;                 // RxInt (RxInt(0)와 동일)
+  final isLogged = false.obs;          // RxBool
+  final balance = 0.0.obs;             // RxDouble
+  final title = 'Hello'.obs;           // RxString
+
+  // 2. 안전한 Nullable 반응형 변수 (Safe Nullable Observables)
+  final name = Rxn<String>();          // Rxn<String> (초기값 null)
+  final activeIndex = Rxn<int>();      // Rxn<int> (초기값 null)
+
+  // 3. 컬렉션 타입 반응형 변수 (Collection Observables)
+  final items = <String>[].obs;        // RxList<String> (변경 사항 자동 일괄 업데이트)
+
+  // 4. 커스텀 객체 반응형 변수 (Custom Object Observables)
+  final user = User(name: 'Guest').obs; // Rx<User>
+
+  void updateState() {
+    // 기본 타입 값 변경
+    count.value++;                     // 업데이트 발생
+    isLogged.toggle();                 // RxBool 전용 편리한 토글 헬퍼
+    title.value = 'Distilled GetX';    // 값이 변경될 때만 업데이트 발생
+
+    // Nullable 값 변경
     name.value = 'Flutter';
+
+    // 리스트 변경 (동일 마이크로태스크 내의 모든 변경사항은 묶여서 단 1회만 UI 업데이트 트리거)
+    items.add('Item ${items.length}');
+
+    // 커스텀 객체 변경
+    user.value = User(name: 'Alice');
   }
 }
 ```

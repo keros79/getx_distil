@@ -18,7 +18,7 @@ However, as the Flutter ecosystem matured toward declarative routing (like `GoRo
 
 ## 📊 Core Enhancements
 
-* 🌳 **100% Tree-Scoped DI Lifecycle**: Eliminates manual `Get.delete()` calls. Controllers are strictly bound to the Flutter widget tree using `BindingWidget`. When a widget unmounts, its controllers are automatically and cleanly garbage-collected (Auto-GC).
+* 🌳 **100% Tree-Scoped DI Lifecycle**: Bind controllers directly to their respective Views using `BindingWidget`. This solves the issue of spawning multiple instances of the same View/Controller concurrently, ensuring each controller is isolated, scoped to its specific view, and automatically garbage-collected (Auto-GC) when the widget unmounts. No manual `Get.delete()` calls required.
 * 🛡️ **Self-Healing Build-Phase Updates**: Modifying reactive state during the widget tree’s build or layout phase normally crashes Flutter with a `setState() during build` exception. `getx_distil` automatically intercepts these and safely defers UI updates to the post-frame callback queue.
 * 🛑 **Strict Async Obx Validation**: Mixing `async/await` directly inside `Obx` builders breaks reactive tracking loops. `getx_distil` catches this anti-pattern instantly and throws a descriptive `FlutterError` rather than failing silently.
 * 🧵 **FIFO Asynchronous Pipeline (`updateSequential`)**: Introduces a clean sequential queue to prevent critical race conditions and state inversion during high-frequency async operations.
@@ -34,13 +34,42 @@ However, as the Flutter ecosystem matured toward declarative routing (like `GoRo
 Isolate updates down to the leaf-most widgets with absolute zero boilerplate.
 
 ```dart
-class CounterController extends GetxController {
-  final count = 0.obs;             // RxInt
-  final name = Rxn<String>();      // Safe Nullable Rx
+class User {
+  String name;
+  User({required this.name});
+}
 
-  void increment() {
-    count.value++;                 // Simple Overwrite
+class CounterController extends GetxController {
+  // 1. Primitive Observables
+  final count = 0.obs;                 // RxInt (equivalent to RxInt(0))
+  final isLogged = false.obs;          // RxBool
+  final balance = 0.0.obs;             // RxDouble
+  final title = 'Hello'.obs;           // RxString
+
+  // 2. Safe Nullable Observables
+  final name = Rxn<String>();          // Rxn<String> (initially null)
+  final activeIndex = Rxn<int>();      // Rxn<int> (initially null)
+
+  // 3. Collection Observables
+  final items = <String>[].obs;        // RxList<String> (mutations are auto-batched)
+
+  // 4. Custom Object Observables
+  final user = User(name: 'Guest').obs; // Rx<User>
+
+  void updateState() {
+    // Modifying primitives
+    count.value++;                     // Triggers update
+    isLogged.toggle();                 // Convenient helper for RxBool
+    title.value = 'Distilled GetX';    // Triggers update only if value changes
+
+    // Modifying nullables
     name.value = 'Flutter';
+
+    // Modifying list (all mutations in the same microtask are batched into 1 UI update)
+    items.add('Item ${items.length}');
+
+    // Modifying custom objects
+    user.value = User(name: 'Alice');
   }
 }
 ```
