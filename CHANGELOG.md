@@ -1,3 +1,7 @@
+## 1.0.4
+
+* update homepage
+
 ## 1.0.3
 
 * **Obx Missing Rx Warning**: Converted the `Obx` missing reactive variable exception to a debug warning to avoid unnecessary crashes.
