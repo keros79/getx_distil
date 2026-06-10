@@ -1,3 +1,7 @@
+## 1.1.3
+
+* **Fixed Sticky Error Status**: Resolved an issue in both `RxSList` and `RxS` where the `error` state was sticky and failed to transition back to `loaded` or `empty` when subsequent data mutations or reload attempts occurred.
+
 ## 1.1.2
 
 * **Documentation Reordering**: Moved `RxSList` and `RxS` sections higher in both `README.md` and `README.ko.md` to be sections 2 and 3 under Quick Start, reflecting their core importance.
