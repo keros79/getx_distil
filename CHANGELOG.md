@@ -1,3 +1,10 @@
+## 1.1.0
+
+* **RxS\<T\> — Status-Aware Single Value**: New [`RxS`] class extending [`Rxn`] that carries its own `loading`/`loaded`/`error` status. Value mutations auto-sync to `loaded`; error state is sticky. Includes `.ops` extension for `T → RxS<T>` conversion and `.on()` widget builder for declarative UI branching.
+* **RxSList, RxS Enhancements**: Added core enhancements documentation in README for both `RxSList` (status-aware list) and `RxS` (status-aware single value).
+* **Example App — RxS Demo Page**: New RxS controller (`RxSController`) and page (`RxSPage`) demonstrating loading, updating, null-setting, error simulation, and reset.
+* **README & Documentation**: Added section 9 "Status-Aware Single Value (`RxS`)" with full usage guide, status auto-sync rules, UI binding patterns, and nullable convenience. Updated Core Enhancements list.
+
 ## 1.0.4
 
 * update homepage
