@@ -324,6 +324,73 @@ Get.locale = const Locale('en', 'US');
 
 ---
 
+### 8. 📋 Smart Reactive List (`RxSList`)
+An extended [`RxList`] that carries its own **loading/loaded/empty/error** status, automatically synchronized with list mutations. No more separate `isLoading`/`errorMessage` observables — the list manages itself.
+
+```dart
+final items = <String>[].ops; // List<T> → RxSList<T> via .ops extension
+print(items.status); // RxListStatus.loading (initial)
+```
+
+#### Status Auto-Sync
+
+Every mutating operation (`add`, `assignAll`, `remove`, `clear`, `value` setter) automatically transitions the status:
+
+```dart
+items.assignAll(['apple', 'banana']); // status → loaded
+items.add('cherry');                  // status stays loaded
+items.clear();                        // status → empty
+```
+
+The `error` state is **never** set automatically — assign it manually when an error occurs. This prevents accidental status overwrite when the list still holds valid data:
+
+```dart
+items.error = 'Network failure';
+items.status = RxListStatus.error; // data is preserved underneath
+```
+
+#### UI Binding — use `Obx(() => list.on(...))`
+
+Wrap `.on()` with `Obx` for reactive binding — the same DX pattern as `Obx(() => list)`:
+
+```dart
+Obx(() => items.on(
+  loading: () => const Center(child: CircularProgressIndicator()),
+  loaded:  (data) => ListView.builder(
+    itemCount: data.length,
+    itemBuilder: (_, i) => Text(data[i]),
+  ),
+  empty:   () => const Center(child: Text('No items')),
+  error:   (msg) => Center(child: Text('Oops: $msg')),
+));
+```
+
+The `loaded` callback is internally wrapped with `Obx`, so **data mutations (`add`/`remove`) trigger immediate UI rebuilds** without additional boilerplate.
+
+#### Paging Support
+
+Use `hasMore` + `addAll` for infinite-scroll paging:
+
+```dart
+final paged = RxSList<String>();
+
+// First page
+paged.assignAll(page1);
+paged.hasMore = true;
+
+// Subsequent pages
+paged.addAll(page2);
+paged.hasMore = page2.isNotEmpty; // false when last page
+```
+
+The `hasMore` field is itself reactive (`Rx<bool>`), so it works seamlessly inside `Obx`:
+
+```dart
+Obx(() => Text(paged.hasMore ? 'More available' : 'All loaded'));
+```
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License.

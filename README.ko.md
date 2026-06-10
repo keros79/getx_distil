@@ -322,6 +322,73 @@ Get.locale = const Locale('en', 'US');
 
 ---
 
+### 8. 📋 스마트 반응형 리스트 (`RxSList`)
+[`RxList`]를 확장하여 **loading/loaded/empty/error** 상태를 자체 관리하는 리스트입니다. 별도의 `isLoading`/`errorMessage` 옵저버블이 필요 없습니다 — 리스트 스스로 상태를 추적합니다.
+
+```dart
+final items = <String>[].ops; // List<T> → RxSList<T> via .ops extension
+print(items.status); // RxListStatus.loading (초기값)
+```
+
+#### 상태 자동 동기화
+
+모든 변경 연산(`add`, `assignAll`, `remove`, `clear`, `value` setter)이 자동으로 상태를 전환합니다:
+
+```dart
+items.assignAll(['apple', 'banana']); // status → loaded
+items.add('cherry');                  // status stays loaded
+items.clear();                        // status → empty
+```
+
+`error` 상태는 **절대 자동으로 설정되지 않습니다** — 에러 발생 시 수동으로 할당합니다. 기존 데이터가 보존된 상태에서 의도치 않게 상태가 덮어쓰여지는 것을 방지합니다:
+
+```dart
+items.error = 'Network failure';
+items.status = RxListStatus.error; // 데이터는 그대로 보존됩니다
+```
+
+#### UI 바인딩 — `Obx(() => list.on(...))` 사용
+
+`.on()`을 `Obx`로 감싸서 반응형 바인딩 — `Obx(() => list)`와 동일한 DX 패턴:
+
+```dart
+Obx(() => items.on(
+  loading: () => const Center(child: CircularProgressIndicator()),
+  loaded:  (data) => ListView.builder(
+    itemCount: data.length,
+    itemBuilder: (_, i) => Text(data[i]),
+  ),
+  empty:   () => const Center(child: Text('No items')),
+  error:   (msg) => Center(child: Text('Oops: $msg')),
+));
+```
+
+`loaded` 콜백은 내부적으로 `Obx`로 감싸져 있어, **데이터 추가/삭제 시 추가 보일러플레이트 없이 즉시 UI가 갱신**됩니다.
+
+#### 페이징 지원
+
+`hasMore` + `addAll`을 조합하여 무한 스크롤 페이징 구현:
+
+```dart
+final paged = RxSList<String>();
+
+// 첫 페이지
+paged.assignAll(page1);
+paged.hasMore = true;
+
+// 이후 페이지
+paged.addAll(page2);
+paged.hasMore = page2.isNotEmpty; // 마지막 페이지면 false
+```
+
+`hasMore` 필드는 자체적으로 반응형(`Rx<bool>`)이므로 `Obx` 내부에서 자연스럽게 사용 가능:
+
+```dart
+Obx(() => Text(paged.hasMore ? 'More available' : 'All loaded'));
+```
+
+---
+
 ## 📄 라이선스
 
 이 프로젝트는 MIT 라이선스에 따라 배포됩니다.

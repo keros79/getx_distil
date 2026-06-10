@@ -15,7 +15,10 @@ class TestListPage extends StatelessWidget {
       body: Obx(() {
         return Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 32.0,
+            ),
             child: Container(
               constraints: const BoxConstraints(maxWidth: 500),
               child: Column(
@@ -62,7 +65,28 @@ class TestListPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // 5. Extra Settings
+                  // 5. RxSList Demo
+                  _buildMenuCard(
+                    context,
+                    title: '6. RxSList Basic',
+                    subtitle:
+                        'RxSList with auto-status tracking via RxList APIs',
+                    route: '/rx-slist',
+                    borderColor: Colors.indigoAccent.withValues(alpha: 0.4),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 6. RxSList Paging Demo
+                  _buildMenuCard(
+                    context,
+                    title: '7. RxSList Paging',
+                    subtitle: 'Infinite-scroll paging with addAll + hasMore',
+                    route: '/rx-slist-paging',
+                    borderColor: Colors.tealAccent.withValues(alpha: 0.4),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 7. Extra Settings
                   _buildMenuCard(
                     context,
                     title: 'test_list_settings_card_title'.tr,
@@ -102,12 +126,9 @@ class TestListPage extends StatelessWidget {
               color: isDark ? const Color(0x1A000000) : const Color(0x06000000),
               blurRadius: 10,
               offset: const Offset(0, 4),
-            )
+            ),
           ],
-          border: Border.all(
-            color: borderColor,
-            width: 1.5,
-          ),
+          border: Border.all(color: borderColor, width: 1.5),
         ),
         child: Row(
           children: [
@@ -125,19 +146,13 @@ class TestListPage extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: Colors.grey,
-            ),
+            const Icon(Icons.chevron_right_rounded, color: Colors.grey),
           ],
         ),
       ),
