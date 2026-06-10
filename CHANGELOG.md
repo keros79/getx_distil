@@ -1,3 +1,9 @@
+## 1.1.2
+
+* **Documentation Reordering**: Moved `RxSList` and `RxS` sections higher in both `README.md` and `README.ko.md` to be sections 2 and 3 under Quick Start, reflecting their core importance.
+* **Markdown Formatting Polish**: Added newlines between item titles and descriptions under the "Core Enhancements" section for a cleaner layout.
+* **HTML/Markdown Parser Warning Fix**: Escaped the angle brackets `<T>` in the `RxSList` class documentation to ensure perfect parser compatibility.
+
 ## 1.1.1
 
 * **Reactive Error Messages in RxS & RxSList**: Refactored the `error` property in both `RxS` and `RxSList` to be reactive using an underlying `Rxn<String>` backing variable while maintaining the standard `String?` getter/setter API.
