@@ -1,3 +1,9 @@
+## 1.1.1
+
+* **Reactive Error Messages in RxS & RxSList**: Refactored the `error` property in both `RxS` and `RxSList` to be reactive using an underlying `Rxn<String>` backing variable while maintaining the standard `String?` getter/setter API.
+* **Declarative Error Branch Reactivity**: Wrapped the `error` widget builder branch in the `.on()` extension with `Obx` to automatically rebuild the UI whenever the error message changes.
+* **Testing Suite Upgrades**: Expanded widget and unit tests in `getx_distil_test.dart` to verify that dynamic mutations to the error message update the rendering tree instantly.
+
 ## 1.1.0
 
 * **RxS\<T\> — Status-Aware Single Value**: New [`RxS`] class extending [`Rxn`] that carries its own `loading`/`loaded`/`error` status. Value mutations auto-sync to `loaded`; error state is sticky. Includes `.ops` extension for `T → RxS<T>` conversion and `.on()` widget builder for declarative UI branching.
