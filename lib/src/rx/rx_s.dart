@@ -62,8 +62,12 @@ class RxS<T> extends Rxn<T> {
   /// ```
   set status(RxDataStatus newStatus) => _status.value = newStatus;
 
+  /// Internal error message observable.
+  final Rxn<String> _error = Rxn<String>();
+
   /// Holds the error message when [status] is [RxDataStatus.error].
-  String? error;
+  String? get error => _error.value;
+  set error(String? val) => _error.value = val;
 
   // ─── Construction ──────────────────────────────────────────────────────────
 
@@ -147,7 +151,7 @@ extension RxSOnExt<T> on RxS<T> {
         });
       case RxDataStatus.error:
         return error != null
-            ? error(this.error ?? 'Unknown error')
+            ? Obx(() => error(this.error ?? 'Unknown error'))
             : const SizedBox.shrink();
     }
   }

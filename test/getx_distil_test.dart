@@ -1375,6 +1375,11 @@ void main() {
       await tester.pump();
 
       expect(find.text('Error: Something broke'), findsOneWidget);
+
+      // Mutate error message only - should dynamically update the widget via the nested Obx
+      list.error = 'Something else broke';
+      await tester.pump();
+      expect(find.text('Error: Something else broke'), findsOneWidget);
     });
 
     testWidgets('on() with no empty/error callbacks shows SizedBox.shrink()', (
@@ -1507,6 +1512,72 @@ void main() {
       list.status = RxListStatus.error;
       await tester.pump();
       expect(find.text('State: error - Test error'), findsOneWidget);
+    });
+  });
+
+  // ─── RxS Tests ──────────────────────────────────────────────────────────────
+
+  group('RxS Tests', () {
+    test('RxS initial status is loading', () {
+      final val = RxS<int>();
+      expect(val.status, RxDataStatus.loading);
+      expect(val.value, isNull);
+    });
+
+    test('error status is sticky — mutations do not overwrite error', () {
+      final val = RxS<String>('initial');
+      val.status = RxDataStatus.error;
+      val.error = 'Boom';
+
+      // Setting value should NOT change status or clear error
+      val.value = 'new';
+      expect(val.status, RxDataStatus.error);
+      expect(val.error, 'Boom');
+      expect(val.value, 'new');
+
+      val.update((_) => 'updated');
+      expect(val.status, RxDataStatus.error);
+      expect(val.error, 'Boom');
+      expect(val.value, 'updated');
+    });
+
+    test('status setter manually transitions status', () {
+      final val = RxS<int>();
+      expect(val.status, RxDataStatus.loading);
+
+      val.status = RxDataStatus.loaded;
+      expect(val.status, RxDataStatus.loaded);
+
+      val.status = RxDataStatus.error;
+      expect(val.status, RxDataStatus.error);
+    });
+
+    testWidgets('on() renders error state and reactively updates on error change', (
+      WidgetTester tester,
+    ) async {
+      final val = RxS<String>();
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Obx(
+            () => val.on(
+              loading: () => const Text('Loading...'),
+              loaded: (data) => const Text('Has data'),
+              error: (msg) => Text('Error: $msg'),
+            ),
+          ),
+        ),
+      );
+
+      val.error = 'Oops';
+      val.status = RxDataStatus.error;
+      await tester.pump();
+      expect(find.text('Error: Oops'), findsOneWidget);
+
+      val.error = 'Oops again';
+      await tester.pump();
+      expect(find.text('Error: Oops again'), findsOneWidget);
     });
   });
 }

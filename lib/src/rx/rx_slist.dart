@@ -82,8 +82,12 @@ class RxSList<T> extends RxList<T> {
   /// ```
   set status(RxListStatus newStatus) => _status.value = newStatus;
 
+  /// Internal error message observable.
+  final Rxn<String> _error = Rxn<String>();
+
   /// Holds the error message when [status] is [RxListStatus.error].
-  String? error;
+  String? get error => _error.value;
+  set error(String? val) => _error.value = val;
 
   // ─── Paging ────────────────────────────────────────────────────────────────
 
@@ -223,7 +227,7 @@ extension RxSListOnExt<T> on RxSList<T> {
         return empty != null ? empty() : const SizedBox.shrink();
       case RxListStatus.error:
         return error != null
-            ? error(this.error ?? 'Unknown error')
+            ? Obx(() => error(this.error ?? 'Unknown error'))
             : const SizedBox.shrink();
     }
   }
