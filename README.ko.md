@@ -23,6 +23,8 @@ Flutter를 위한 **고성능 마이크로 상태 관리 및 트리 스코프 �
 * 🛑 **엄격한 비동기 Obx 검증**: `Obx` 빌더 콜백 내부에서 직접 `async/await`를 사용하는 것은 반응형 추적 고리를 끊어버리는 안티 패턴입니다. `getx_distil`은 이 실수를 실시간으로 탐지하여, 조용히 오동작하는 대신 명확한 경고가 담긴 `FlutterError`를 던져 줍니다.
 * 🧵 **FIFO 비동기 파이프라인 (`updateSequential`)**: 고주파 비동기 데이터 갱신 시 발생하는 크리티컬한 데이터 순서 뒤바뀜 및 레이스 컨디션 문제를 방지하기 위해 정교한 순차 처리 대기 큐를 내장했습니다.
 * 📋 **루프 대량 변경 최적화 (`RxList`)**: 루프 반복문 내에서 대량의 요소 변경이 일어날 때 매번 값 변경 이벤트를 발생시켜 화면을 무수히 리빌드하는 대신, 변경점들을 묶어 단 1회의 마이크로태스크 UI 리프레시만 예약 및 수행합니다.
+* 📋 **상태 인지 반응형 리스트 (`RxSList`)**: [`RxList`]를 확장하여 `loading`/`loaded`/`empty`/`error` 상태를 자체 관리합니다. 모든 변경 연산이 자동으로 상태를 동기화하므로 별도의 `isLoading`/`errorMessage` 옵저버블이 필요 없습니다.
+* 📦 **상태 인지 단일 값 (`RxS`)**: [`Rxn`]을 확장하여 `loading`/`loaded`/`error` 상태를 자체 관리합니다. nullable 단일 객체 상태에 적합하며, 값 설정 시 자동으로 `loaded`로 전환되고 error는 sticky하게 유지됩니다.
 * 🔍 **직관적인 DI 디버깅 가이드**: `Get.find`가 의존성을 찾지 못해 실패할 때 단순한 에러 스택 대신, 요청을 호출한 위젯명, 정확한 상위 조상 위젯 계층 구조 경로(Tree Path), 그리고 현재 메모리에 올라와 있는 전역/불멸 서비스 목록을 한눈에 표시해 줍니다.
 * ⚡ **고속 트랙(Fast-Path) 추적 플래그 (`Notifier.isTracking`)**: 오리지널 GetX에서는 `Obx` 외부(일반 비즈니스 로직 루프, 백그라운드 연산 등)에서 반응형 변수를 단순히 읽기만 해도 매번 전역 프록시(`RxInterface.proxy`) 탐색과 null 여부 체크를 거치게 됩니다. `getx_distil`은 정적 부울 플래그 `isTracking`을 도입하여 `Obx` 빌드 중이 아닐 때는 복잡한 프록시 탐색과 등록 파이프라인을 원천적으로 우회(bypass)하도록 개선함으로써, 대량 데이터 순회 및 연산 시의 CPU 부하와 불필요한 탐색 오버헤드를 극적으로 제거했습니다.
 
@@ -322,7 +324,7 @@ Get.locale = const Locale('en', 'US');
 
 ---
 
-### 8. 📋 스마트 반응형 리스트 (`RxSList`)
+### 8. 📋 상태 인지 반응형 리스트 (`RxSList`)
 [`RxList`]를 확장하여 **loading/loaded/empty/error** 상태를 자체 관리하는 리스트입니다. 별도의 `isLoading`/`errorMessage` 옵저버블이 필요 없습니다 — 리스트 스스로 상태를 추적합니다.
 
 ```dart
@@ -385,6 +387,59 @@ paged.hasMore = page2.isNotEmpty; // 마지막 페이지면 false
 
 ```dart
 Obx(() => Text(paged.hasMore ? 'More available' : 'All loaded'));
+```
+
+---
+
+### 9. 📦 상태 인지 단일 값 (`RxS`)
+
+[`Rxn`]을 확장하여 **loading/loaded/error** 상태를 자체 관리하는 단일 값 반응형 객체입니다. 비동기 라이프사이클을 거치는 User 프로필이나 설정 같은 단일 객체 상태에 적합합니다.
+
+```dart
+final user = RxS<User?>(null); // T?로 nullable 지원
+print(user.status); // RxDataStatus.loading (초기값)
+```
+
+#### 상태 자동 동기화
+
+모든 값 변경 연산(`value` setter, `update()`)이 자동으로 상태를 `loaded`로 전환합니다:
+
+```dart
+user.value = User(name: '김철수');   // status → loaded
+user.update((u) => User(name: '영희')); // status stays loaded
+user.value = null;                    // status stays loaded (null도 유효한 값)
+```
+
+`error` 상태는 **절대 자동으로 설정되지 않습니다** — 에러 발생 시 수동으로 할당합니다. 기존 값이 보존된 상태에서 의도치 않게 상태가 덮어쓰여지는 것을 방지합니다:
+
+```dart
+user.error = '네트워크 연결에 실패했습니다';
+user.status = RxDataStatus.error; // 현재 user 데이터는 그대로 보존됩니다
+```
+
+#### UI 바인딩 — `Obx(() => value.on(...))` 사용
+
+`.on()`을 `Obx`로 감싸서 반응형 바인딩 — `Obx(() => value)`와 동일한 DX 패턴:
+
+```dart
+Obx(() => user.on(
+  loading: () => const Center(child: CircularProgressIndicator()),
+  loaded:  (data) => Text('안녕하세요, ${data?.name ?? "게스트"}'),
+  error:   (msg) => Center(child: Text('오류: $msg')),
+));
+```
+
+`loaded` 콜백은 내부적으로 `Obx`로 감싸져 있어, **값 변경 시 추가 보일러플레이트 없이 즉시 UI가 갱신**됩니다.
+
+#### Nullable 편의성
+
+`RxS<T>`는 `Rxn<T>`를 상속받았기 때문에 nullable 값을 완벽히 지원합니다. `loaded` 콜백은 `T?` 데이터를 받으므로, 값이 있거나 null인 경우를 모두 처리할 수 있습니다:
+
+```dart
+RxS<String?> message = RxS<String?>(null);
+
+message.value = '안녕하세요'; // loaded with value
+message.value = null;          // loaded, data is null
 ```
 
 ---

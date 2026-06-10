@@ -19,6 +19,8 @@ import 'src/views/rx_slist_controller.dart';
 import 'src/views/rx_slist_page.dart';
 import 'src/views/rx_slist_paging_controller.dart';
 import 'src/views/rx_slist_paging_page.dart';
+import 'src/views/rx_s_controller.dart';
+import 'src/views/rx_s_page.dart';
 
 class AppTranslations extends Translations {
   @override
@@ -261,7 +263,16 @@ class MyApp extends StatelessWidget {
           ),
         ),
 
-        // 8. Settings Page
+        // 8. RxS Demo Page
+        GoRoute(
+          path: '/rx-s',
+          builder: (context, state) => BindingWidget(
+            bindings: [Bind<RxSController>(() => RxSController())],
+            child: const RxSPage(),
+          ),
+        ),
+
+        // 9. Settings Page
         GoRoute(
           path: '/settings',
           builder: (context, state) => const ExtraSettingsPage(),

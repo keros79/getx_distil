@@ -86,7 +86,18 @@ class TestListPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // 7. Extra Settings
+                  // 7. RxS Demo
+                  _buildMenuCard(
+                    context,
+                    title: '8. RxS Single Value Status',
+                    subtitle:
+                        'RxS with loading/loaded/error auto-status tracking',
+                    route: '/rx-s',
+                    borderColor: Colors.deepOrangeAccent.withValues(alpha: 0.4),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 8. Extra Settings
                   _buildMenuCard(
                     context,
                     title: 'test_list_settings_card_title'.tr,

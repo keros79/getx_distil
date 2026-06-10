@@ -23,6 +23,8 @@ However, as the Flutter ecosystem matured toward declarative routing (like `GoRo
 * 🛑 **Strict Async Obx Validation**: Mixing `async/await` directly inside `Obx` builders breaks reactive tracking loops. `getx_distil` catches this anti-pattern instantly and throws a descriptive `FlutterError` rather than failing silently.
 * 🧵 **FIFO Asynchronous Pipeline (`updateSequential`)**: Introduces a clean sequential queue to prevent critical race conditions and state inversion during high-frequency async operations.
 * 📋 **Batched Loop Mutations (`RxList`)**: Instead of triggering expensive UI rebuilds on every single mutation inside a loop, `RxList` aggregates changes and schedules a single microtask UI refresh.
+* 📋 **Status-Aware Reactive List (`RxSList`)**: An [`RxList`] subclass that carries its own `loading`/`loaded`/`empty`/`error` status, automatically synchronized with every mutation. No separate `isLoading`/`errorMessage` observables needed.
+* 📦 **Status-Aware Single Value (`RxS`)**: An [`Rxn`] subclass that carries its own `loading`/`loaded`/`error` status for nullable single-object state. Automatically transitions to `loaded` on value set, with sticky error state.
 * 🔍 **High-Visibility DI Debugging**: When `Get.find` fails, it no longer throws a cryptic message. It prints a comprehensive debug layout showing the requested context name, the exact parent ancestor widget hierarchy path, and active services in memory.
 * ⚡ **High-Performance Fast-Path Tracking (`Notifier.isTracking`)**: In original GetX, reading any reactive variable (even in normal business logic loops or background tasks outside of `Obx` widgets) triggers a lookup of the global tracking proxy. `getx_distil` introduces a lightweight static boolean flag `isTracking`. Outside of active `Obx` build frames, this flag is `false`, bypassing the entire proxy lookup and dependency registration pipeline. This dramatically reduces CPU cycles during heavy calculation loops or traversals.
 
@@ -324,7 +326,7 @@ Get.locale = const Locale('en', 'US');
 
 ---
 
-### 8. 📋 Smart Reactive List (`RxSList`)
+### 8. 📋 Status-Aware Reactive List (`RxSList`)
 An extended [`RxList`] that carries its own **loading/loaded/empty/error** status, automatically synchronized with list mutations. No more separate `isLoading`/`errorMessage` observables — the list manages itself.
 
 ```dart
@@ -387,6 +389,59 @@ The `hasMore` field is itself reactive (`Rx<bool>`), so it works seamlessly insi
 
 ```dart
 Obx(() => Text(paged.hasMore ? 'More available' : 'All loaded'));
+```
+
+---
+
+### 9. 📦 Status-Aware Single Value (`RxS`)
+
+An extended [`Rxn`] that carries its own **loading/loaded/error** status, automatically synchronized with value mutations. Perfect for single-object state like a User profile or configuration that goes through an async lifecycle.
+
+```dart
+final user = RxS<User?>(null); // T? for nullable support
+print(user.status); // RxDataStatus.loading (initial)
+```
+
+#### Status Auto-Sync
+
+Every value mutation (`value` setter, `update()`) automatically transitions the status to `loaded`:
+
+```dart
+user.value = User(name: 'Alice'); // status → loaded
+user.update((u) => User(name: 'Bob')); // status stays loaded
+user.value = null; // status stays loaded (null is a valid value)
+```
+
+The `error` state is **never** set automatically — assign it manually when an error occurs. This preserves the current value underneath:
+
+```dart
+user.error = 'Network failure';
+user.status = RxDataStatus.error; // current user data is preserved
+```
+
+#### UI Binding — use `Obx(() => value.on(...))`
+
+Wrap `.on()` with `Obx` for reactive binding — the same DX pattern as `Obx(() => value)`:
+
+```dart
+Obx(() => user.on(
+  loading: () => const Center(child: CircularProgressIndicator()),
+  loaded:  (data) => Text('Hello, ${data?.name ?? "Guest"}'),
+  error:   (msg) => Center(child: Text('Oops: $msg')),
+));
+```
+
+The `loaded` callback is internally wrapped with `Obx`, so **value mutations trigger immediate UI rebuilds** without additional boilerplate.
+
+#### Nullable Convenience
+
+Because `RxS<T>` extends `Rxn<T>`, it fully supports nullable values. The `loaded` callback receives `T?` data, so you can handle both present and null values:
+
+```dart
+RxS<String?> message = RxS<String?>(null);
+
+message.value = 'Hello';  // loaded with value
+message.value = null;      // loaded, data is null
 ```
 
 ---
