@@ -18,15 +18,24 @@ Flutter를 위한 **고성능 마이크로 상태 관리 및 트리 스코프 �
 
 ## 📊 핵심 개선 사항
 
-* 🌳 **100% 트리 스코프 DI 라이프사이클**: `BindingWidget`을 통해 컨트롤러를 각각의 뷰(View)에 직접 종속시킵니다. 이는 동일한 자식 뷰/컨트롤러 쌍을 동시에 여러 개 띄워야 하는 경우, 각 컨트롤러가 서로 간섭하지 않고 독립적으로 동작하도록 설계되었습니다. 또한 수동 `Get.delete()` 없이 위젯이 트리에서 제거될 때 자동으로 안전하게 가비지 컬렉션(Auto-GC)됩니다.
-* 🛡️ **빌드 단계 상태 변경 자가 치유**: 위젯 트리가 빌드되거나 레이아웃을 잡는 도중에 반응형 상태를 수정하면 일반적으로 Flutter 엔진은 `setState() during build` 치명적 크래시를 유발합니다. `getx_distil`은 이를 스스로 감지하고 UI 업데이트를 다음 포스트 프레임 콜백 큐로 알아서 안전하게 지연 처리합니다.
-* 🛑 **엄격한 비동기 Obx 검증**: `Obx` 빌더 콜백 내부에서 직접 `async/await`를 사용하는 것은 반응형 추적 고리를 끊어버리는 안티 패턴입니다. `getx_distil`은 이 실수를 실시간으로 탐지하여, 조용히 오동작하는 대신 명확한 경고가 담긴 `FlutterError`를 던져 줍니다.
-* 🧵 **FIFO 비동기 파이프라인 (`updateSequential`)**: 고주파 비동기 데이터 갱신 시 발생하는 크리티컬한 데이터 순서 뒤바뀜 및 레이스 컨디션 문제를 방지하기 위해 정교한 순차 처리 대기 큐를 내장했습니다.
-* 📋 **루프 대량 변경 최적화 (`RxList`)**: 루프 반복문 내에서 대량의 요소 변경이 일어날 때 매번 값 변경 이벤트를 발생시켜 화면을 무수히 리빌드하는 대신, 변경점들을 묶어 단 1회의 마이크로태스크 UI 리프레시만 예약 및 수행합니다.
-* 📋 **상태 인지 반응형 리스트 (`RxSList`)**: [`RxList`]를 확장하여 `loading`/`loaded`/`empty`/`error` 상태를 자체 관리합니다. 모든 변경 연산이 자동으로 상태를 동기화하므로 별도의 `isLoading`/`errorMessage` 옵저버블이 필요 없습니다.
-* 📦 **상태 인지 단일 값 (`RxS`)**: [`Rxn`]을 확장하여 `loading`/`loaded`/`error` 상태를 자체 관리합니다. nullable 단일 객체 상태에 적합하며, 값 설정 시 자동으로 `loaded`로 전환되고 error는 sticky하게 유지됩니다.
-* 🔍 **직관적인 DI 디버깅 가이드**: `Get.find`가 의존성을 찾지 못해 실패할 때 단순한 에러 스택 대신, 요청을 호출한 위젯명, 정확한 상위 조상 위젯 계층 구조 경로(Tree Path), 그리고 현재 메모리에 올라와 있는 전역/불멸 서비스 목록을 한눈에 표시해 줍니다.
-* ⚡ **고속 트랙(Fast-Path) 추적 플래그 (`Notifier.isTracking`)**: 오리지널 GetX에서는 `Obx` 외부(일반 비즈니스 로직 루프, 백그라운드 연산 등)에서 반응형 변수를 단순히 읽기만 해도 매번 전역 프록시(`RxInterface.proxy`) 탐색과 null 여부 체크를 거치게 됩니다. `getx_distil`은 정적 부울 플래그 `isTracking`을 도입하여 `Obx` 빌드 중이 아닐 때는 복잡한 프록시 탐색과 등록 파이프라인을 원천적으로 우회(bypass)하도록 개선함으로써, 대량 데이터 순회 및 연산 시의 CPU 부하와 불필요한 탐색 오버헤드를 극적으로 제거했습니다.
+* 🌳 **100% 트리 스코프 DI 라이프사이클**
+  `BindingWidget`을 통해 컨트롤러를 각각의 뷰(View)에 직접 종속시킵니다. 이는 동일한 자식 뷰/컨트롤러 쌍을 동시에 여러 개 띄워야 하는 경우, 각 컨트롤러가 서로 간섭하지 않고 독립적으로 동작하도록 설계되었습니다. 또한 수동 `Get.delete()` 없이 위젯이 트리에서 제거될 때 자동으로 안전하게 가비지 컬렉션(Auto-GC)됩니다.
+* 🛡️ **빌드 단계 상태 변경 자가 치유**
+  위젯 트리가 빌드되거나 레이아웃을 잡는 도중에 반응형 상태를 수정하면 일반적으로 Flutter 엔진은 `setState() during build` 치명적 크래시를 유발합니다. `getx_distil`은 이를 스스로 감지하고 UI 업데이트를 다음 포스트 프레임 콜백 큐로 알아서 안전하게 지연 처리합니다.
+* 🛑 **엄격한 비동기 Obx 검증**
+  `Obx` 빌더 콜백 내부에서 직접 `async/await`를 사용하는 것은 반응형 추적 고리를 끊어버리는 안티 패턴입니다. `getx_distil`은 이 실수를 실시간으로 탐지하여, 조용히 오동작하는 대신 명확한 경고가 담긴 `FlutterError`를 던져 줍니다.
+* 🧵 **FIFO 비동기 파이프라인 (`updateSequential`)**
+  고주파 비동기 데이터 갱신 시 발생하는 크리티컬한 데이터 순서 뒤바뀜 및 레이스 컨디션 문제를 방지하기 위해 정교한 순차 처리 대기 큐를 내장했습니다.
+* 📋 **루프 대량 변경 최적화 (`RxList`)**
+  루프 반복문 내에서 대량의 요소 변경이 일어날 때 매번 값 변경 이벤트를 발생시켜 화면을 무수히 리빌드하는 대신, 변경점들을 묶어 단 1회의 마이크로태스크 UI 리프레시만 예약 및 수행합니다.
+* 📋 **상태 인지 반응형 리스트 (`RxSList`)**
+  [`RxList`]를 확장하여 `loading`/`loaded`/`empty`/`error` 상태를 자체 관리합니다. 모든 변경 연산이 자동으로 상태를 동기화하므로 별도의 `isLoading`/`errorMessage` 옵저버블이 필요 없습니다.
+* 📦 **상태 인지 단일 값 (`RxS`)**
+  [`Rxn`]을 확장하여 `loading`/`loaded`/`error` 상태를 자체 관리합니다. nullable 단일 객체 상태에 적합하며, 값 설정 시 자동으로 `loaded`로 전환되고 error는 sticky하게 유지됩니다.
+* 🔍 **직관적인 DI 디버깅 가이드**
+  `Get.find`가 의존성을 찾지 못해 실패할 때 단순한 에러 스택 대신, 요청을 호출한 위젯명, 정확한 상위 조상 위젯 계층 구조 경로(Tree Path), 그리고 현재 메모리에 올라와 있는 전역/불멸 서비스 목록을 한눈에 표시해 줍니다.
+* ⚡ **고속 트랙(Fast-Path) 추적 플래그 (`Notifier.isTracking`)**
+  오리지널 GetX에서는 `Obx` 외부(일반 비즈니스 로직 루프, 백그라운드 연산 등)에서 반응형 변수를 단순히 읽기만 해도 매번 전역 프록시(`RxInterface.proxy`) 탐색과 null 여부 체크를 거치게 됩니다. `getx_distil`은 정적 부울 플래그 `isTracking`을 도입하여 `Obx` 빌드 중이 아닐 때는 복잡한 프록시 탐색과 등록 파이프라인을 원천적으로 우회(bypass)하도록 개선함으로써, 대량 데이터 순회 및 연산 시의 CPU 부하와 불필요한 탐색 오버헤드를 극적으로 제거했습니다.
 
 ---
 
@@ -99,232 +108,7 @@ Obx(() => Text('${controller.count.value}'));
 
 ---
 
-### 2. 🚀 전역/클래식 의존성 주입 (`Get.put` & `Get.find`)
-전역 범위(Global Registry)에 인스턴스를 즉시 혹은 지연 등록하여 앱 어디서든 쉽게 참조할 수 있는 전통적인 GetX 방식의 싱글톤 DI입니다.
-
-인스턴스 등록:
-```dart
-// 1. put: 인스턴스를 즉시 생성하여 전역 메모리에 등록
-final controller = Get.put(CounterController());
-
-// 2. lazyPut: 인스턴스를 등록만 해두고, 최초로 Get.find가 호출되는 시점에 생성 (지연 로딩)
-Get.lazyPut(() => CounterController());
-
-// 3. tag를 통한 고유 식별 등록 (동일 타입의 멀티 인스턴스)
-Get.put(CounterController(), tag: 'special_counter');
-```
-
-인스턴스 조회 (BuildContext가 필요 없는 전역 참조):
-```dart
-// 전역에 등록된 인스턴스 검색 및 획득
-final controller = Get.find<CounterController>();
-
-// tag를 지정해 등록된 인스턴스 검색
-final specialController = Get.find<CounterController>(null, 'special_counter');
-```
-
-> [!TIP]
-> `getx_distil`은 **하이브리드 DI**를 지원합니다. `Get.find(context)`와 같이 `BuildContext`를 함께 전달하면 화면 위젯 트리 범위의 DI(`BindingWidget`)에서 인스턴스를 우선 탐색하며, 존재하지 않을 경우 자동으로 전역 범위(Global Registry)를 찾아 인스턴스를 반환합니다.
-> 
-> 또한 v1.0.1부터는 `BindingWidget`에 등록된 스코프 컨트롤러라도 위젯 트리에서 한 번 생성되었다면, 메모리 누수가 없는 안전한 약한 참조 캐시(Weak Reference Cache)를 통해 **`BuildContext` 없이 `Get.find<T>()` 호출만으로 조회**할 수 있습니다.
-
-> [!WARNING]
-> **컨트롤러 내부에서 Context 없이 의존성 조회 시 권장 사항 (Best Practice)**
-> 
-> 인스턴스 생성 단계의 레이스 컨디션 및 `Could not find any instance...` 에러를 방지하려면, **멤버 변수 선언 시점이나 생성자 본문 내에서 즉시 context 없이 `Get.find()`를 수행하지 마세요.** (의존하는 다른 컨트롤러가 아직 생성 완료되지 않았을 수 있습니다.)
-> 
-> 대신 아래와 같이 **`late` 초기화**, **`getter`**, 혹은 **`onInit()`** 생명주기 메서드 안에서 조회를 지연 수행하는 것을 강력히 권장합니다.
-> 
-> ```dart
-> class ChildController extends GetxController {
->   // ❌ 비권장: 생성자 실행 단계에서 즉시 Get.find가 돌아 레이스 컨디션 유발 위험
->   // final parent = Get.find<ParentController>();
-> 
->   // ✅ 권장 대안 1: 처음 접근해 사용되는 시점에 지연 평가(Lazy)하여 탐색
->   late final parent = Get.find<ParentController>();
-> 
->   // ✅ 권장 대안 2: 호출될 때마다 동적으로 탐색
->   ParentController get parent => Get.find<ParentController>();
-> 
->   // ✅ 권장 대안 3: 컨트롤러 생명주기가 안착된 안전한 시점에 탐색
->   late final ParentController parent;
-> 
->   @override
->   void onInit() {
->     super.onInit();
->     parent = Get.find<ParentController>();
->   }
-> }
-> ```
-
----
-
-### 3. 🌳 위젯 트리 스코프 의존성 주입 (`BindingWidget`)
-컨트롤러의 수명 주기를 화면의 가시성(Visibility)과 완벽히 일치시킵니다. `GoRouter`나 네이티브 `Navigator` 환경에 최적화되어 있습니다.
-
-```dart
-GoRoute(
-  path: '/settings',
-  builder: (context, state) => BindingWidget(
-    bindings: [
-      Bind<SettingsController>(() => SettingsController()),
-    ],
-    child: const SettingsPage(),
-  ),
-)
-```
-
-`SettingsPage` 내부 (컨텍스트 기반 자동 의존성 해결):
-```dart
-class SettingsPage extends GetView<SettingsController> {
-  const SettingsPage({super.key});
-  
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Obx(() => Text(controller.someData.value)),
-    );
-  }
-}
-```
-
----
-
-### 4. 🌐 전역 불멸 서비스 (`GetxService`)
-데이터베이스 초기화, 유저 인증 정보 세션 매니저, 네트워크 클라이언트 모듈 등 앱 구동 내내 메모리에 유지(Immortal Singleton)되어야 하는 아키텍처 레이어를 선언합니다.
-
-```dart
-class DatabaseService extends GetxService {
-  Future<void> init() async => print('DB Connected');
-}
-```
-
-어플리케이션 최상위 노드에 등록:
-```dart
-GetMaterialApp(
-  bindings: [Bind<DatabaseService>(() => DatabaseService())],
-  child: const MyApp(),
-);
-```
-
-비즈니스 로직 어디서든 BuildContext 없이도 편하게 조회:
-```dart
-final db = Get.find<DatabaseService>();
-```
-
----
-
-### 5. 🛠️ 백그라운드 부수 효과 (`Worker`)
-반응형 변수의 상태를 지켜보다가 비동기 API 데이터 갱신, 디바운스 입력 연동 등 실시간 백그라운드 동작을 깔끔하게 처리합니다.
-
-```dart
-class SearchController extends GetxController {
-  final searchQuery = ''.obs;
-  late final Worker _worker;
-
-  @override
-  void onInit() {
-    super.onInit();
-    // 타자 입력이 멈추고 500ms 동안 대기가 발생할 때만 통신 수행
-    _worker = debounce(
-      searchQuery, 
-      (query) => fetchApi(query), 
-      time: const Duration(milliseconds: 500),
-    );
-  }
-
-  @override
-  void onClose() {
-    _worker.dispose(); // 명시적인 dispose 규칙을 도입하여 누수를 완벽히 방지합니다!
-    super.onClose();
-  }
-}
-```
-
----
-
-### 6. 🔄 선언적 비동기 분기 처리 (`StateMixin`)
-일반적인 API 통신의 네 가지 단골 상태인 로딩 중, 데이터 성공, 비어있음, 에러 발생 처리를 복잡한 분기문 없이 우아하게 작성합니다.
-
-```dart
-class UserController extends GetxController with StateMixin<String> {
-  void fetchUser() async {
-    change(null, status: RxStatus.loading());
-    try {
-      final res = await api.getUser();
-      res.isEmpty 
-          ? change(null, status: RxStatus.empty()) 
-          : change(res, status: RxStatus.success());
-    } catch (e) {
-      change(null, status: RxStatus.error(e.toString()));
-    }
-  }
-}
-```
-
-뷰 레이어에서 선언적 맵 처리:
-```dart
-controller.obx(
-  (state) => Text('안녕하세요, $state 님'),
-  onLoading: const CircularProgressIndicator(),
-  onEmpty: const Text('유저 정보를 찾지 못했습니다.'),
-  onError: (error) => Text('에러 발생: $error', style: const TextStyle(color: Colors.red)),
-);
-```
-
----
-
-### 7. 🌐 다국어 및 로컬라이제이션 (`Translations` & `tr`)
-앱의 다국어 번역 리소스를 유연하고 반응형으로 관리하며, 유저의 설정에 따라 화면 언어를 실시간으로 동적 변경합니다.
-
-다국어 번역 사전 정의:
-```dart
-class MyTranslations extends Translations {
-  @override
-  Map<String, Map<String, String>> get keys => {
-    'en_US': {
-      'hello': 'Hello World',
-      'welcome': 'Welcome, @name!',
-    },
-    'ko_KR': {
-      'hello': '안녕하세요',
-      'welcome': '안녕하세요, @name님!',
-    }
-  };
-}
-```
-
-최상위 앱에 번역 등록 및 기본 언어 지정:
-```dart
-GetMaterialApp(
-  translations: MyTranslations(),
-  locale: const Locale('ko', 'KR'),
-  fallbackLocale: const Locale('en', 'US'),
-  child: const MyApp(),
-);
-```
-
-뷰 레이어에서 반응형으로 다국어 텍스트 사용:
-```dart
-// 1. 단순 번역 lookup
-Obx(() => Text('hello'.tr))
-
-// 2. 파라미터 치환 번역
-Obx(() => Text('welcome'.trParams({'name': '홍길동'})))
-```
-
-실시간 동적 언어 변경:
-```dart
-// 한국어로 변경
-Get.locale = const Locale('ko', 'KR');
-
-// 영어로 변경
-Get.locale = const Locale('en', 'US');
-```
-
----
-
-### 8. 📋 상태 인지 반응형 리스트 (`RxSList`)
+### 2. 📋 상태 인지 반응형 리스트 (`RxSList`)
 [`RxList`]를 확장하여 **loading/loaded/empty/error** 상태를 자체 관리하는 리스트입니다. 별도의 `isLoading`/`errorMessage` 옵저버블이 필요 없습니다 — 리스트 스스로 상태를 추적합니다.
 
 ```dart
@@ -391,7 +175,7 @@ Obx(() => Text(paged.hasMore ? 'More available' : 'All loaded'));
 
 ---
 
-### 9. 📦 상태 인지 단일 값 (`RxS`)
+### 3. 📦 상태 인지 단일 값 (`RxS`)
 
 [`Rxn`]을 확장하여 **loading/loaded/error** 상태를 자체 관리하는 단일 값 반응형 객체입니다. 비동기 라이프사이클을 거치는 User 프로필이나 설정 같은 단일 객체 상태에 적합합니다.
 
@@ -440,6 +224,231 @@ RxS<String?> message = RxS<String?>(null);
 
 message.value = '안녕하세요'; // loaded with value
 message.value = null;          // loaded, data is null
+```
+
+---
+
+### 4. 🚀 전역/클래식 의존성 주입 (`Get.put` & `Get.find`)
+전역 범위(Global Registry)에 인스턴스를 즉시 혹은 지연 등록하여 앱 어디서든 쉽게 참조할 수 있는 전통적인 GetX 방식의 싱글톤 DI입니다.
+
+인스턴스 등록:
+```dart
+// 1. put: 인스턴스를 즉시 생성하여 전역 메모리에 등록
+final controller = Get.put(CounterController());
+
+// 2. lazyPut: 인스턴스를 등록만 해두고, 최초로 Get.find가 호출되는 시점에 생성 (지연 로딩)
+Get.lazyPut(() => CounterController());
+
+// 3. tag를 통한 고유 식별 등록 (동일 타입의 멀티 인스턴스)
+Get.put(CounterController(), tag: 'special_counter');
+```
+
+인스턴스 조회 (BuildContext가 필요 없는 전역 참조):
+```dart
+// 전역에 등록된 인스턴스 검색 및 획득
+final controller = Get.find<CounterController>();
+
+// tag를 지정해 등록된 인스턴스 검색
+final specialController = Get.find<CounterController>(null, 'special_counter');
+```
+
+> [!TIP]
+> `getx_distil`은 **하이브리드 DI**를 지원합니다. `Get.find(context)`와 같이 `BuildContext`를 함께 전달하면 화면 위젯 트리 범위의 DI(`BindingWidget`)에서 인스턴스를 우선 탐색하며, 존재하지 않을 경우 자동으로 전역 범위(Global Registry)를 찾아 인스턴스를 반환합니다.
+> 
+> 또한 v1.0.1부터는 `BindingWidget`에 등록된 스코프 컨트롤러라도 위젯 트리에서 한 번 생성되었다면, 메모리 누수가 없는 안전한 약한 참조 캐시(Weak Reference Cache)를 통해 **`BuildContext` 없이 `Get.find<T>()` 호출만으로 조회**할 수 있습니다.
+
+> [!WARNING]
+> **컨트롤러 내부에서 Context 없이 의존성 조회 시 권장 사항 (Best Practice)**
+> 
+> 인스턴스 생성 단계의 레이스 컨디션 및 `Could not find any instance...` 에러를 방지하려면, **멤버 변수 선언 시점이나 생성자 본문 내에서 즉시 context 없이 `Get.find()`를 수행하지 마세요.** (의존하는 다른 컨트롤러가 아직 생성 완료되지 않았을 수 있습니다.)
+> 
+> 대신 아래와 같이 **`late` 초기화**, **`getter`**, 혹은 **`onInit()`** 생명주기 메서드 안에서 조회를 지연 수행하는 것을 강력히 권장합니다.
+> 
+> ```dart
+> class ChildController extends GetxController {
+>   // ❌ 비권장: 생성자 실행 단계에서 즉시 Get.find가 돌아 레이스 컨디션 유발 위험
+>   // final parent = Get.find<ParentController>();
+> 
+>   // ✅ 권장 대안 1: 처음 접근해 사용되는 시점에 지연 평가(Lazy)하여 탐색
+>   late final parent = Get.find<ParentController>();
+> 
+>   // ✅ 권장 대안 2: 호출될 때마다 동적으로 탐색
+>   ParentController get parent => Get.find<ParentController>();
+> 
+>   // ✅ 권장 대안 3: 컨트롤러 생명주기가 안착된 안전한 시점에 탐색
+>   late final ParentController parent;
+> 
+>   @override
+>   void onInit() {
+>     super.onInit();
+>     parent = Get.find<ParentController>();
+>   }
+> }
+> ```
+
+---
+
+### 5. 🌳 위젯 트리 스코프 의존성 주입 (`BindingWidget`)
+컨트롤러의 수명 주기를 화면의 가시성(Visibility)과 완벽히 일치시킵니다. `GoRouter`나 네이티브 `Navigator` 환경에 최적화되어 있습니다.
+
+```dart
+GoRoute(
+  path: '/settings',
+  builder: (context, state) => BindingWidget(
+    bindings: [
+      Bind<SettingsController>(() => SettingsController()),
+    ],
+    child: const SettingsPage(),
+  ),
+)
+```
+
+`SettingsPage` 내부 (컨텍스트 기반 자동 의존성 해결):
+```dart
+class SettingsPage extends GetView<SettingsController> {
+  const SettingsPage({super.key});
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Obx(() => Text(controller.someData.value)),
+    );
+  }
+}
+```
+
+---
+
+### 6. 🌐 전역 불멸 서비스 (`GetxService`)
+데이터베이스 초기화, 유저 인증 정보 세션 매니저, 네트워크 클라이언트 모듈 등 앱 구동 내내 메모리에 유지(Immortal Singleton)되어야 하는 아키텍처 레이어를 선언합니다.
+
+```dart
+class DatabaseService extends GetxService {
+  Future<void> init() async => print('DB Connected');
+}
+```
+
+어플리케이션 최상위 노드에 등록:
+```dart
+GetMaterialApp(
+  bindings: [Bind<DatabaseService>(() => DatabaseService())],
+  child: const MyApp(),
+);
+```
+
+비즈니스 로직 어디서든 BuildContext 없이도 편하게 조회:
+```dart
+final db = Get.find<DatabaseService>();
+```
+
+---
+
+### 7. 🛠️ 백그라운드 부수 효과 (`Worker`)
+반응형 변수의 상태를 지켜보다가 비동기 API 데이터 갱신, 디바운스 입력 연동 등 실시간 백그라운드 동작을 깔끔하게 처리합니다.
+
+```dart
+class SearchController extends GetxController {
+  final searchQuery = ''.obs;
+  late final Worker _worker;
+
+  @override
+  void onInit() {
+    super.onInit();
+    // 타자 입력이 멈추고 500ms 동안 대기가 발생할 때만 통신 수행
+    _worker = debounce(
+      searchQuery, 
+      (query) => fetchApi(query), 
+      time: const Duration(milliseconds: 500),
+    );
+  }
+
+  @override
+  void onClose() {
+    _worker.dispose(); // 명시적인 dispose 규칙을 도입하여 누수를 완벽히 방지합니다!
+    super.onClose();
+  }
+}
+```
+
+---
+
+### 8. 🔄 선언적 비동기 분기 처리 (`StateMixin`)
+일반적인 API 통신의 네 가지 단골 상태인 로딩 중, 데이터 성공, 비어있음, 에러 발생 처리를 복잡한 분기문 없이 우아하게 작성합니다.
+
+```dart
+class UserController extends GetxController with StateMixin<String> {
+  void fetchUser() async {
+    change(null, status: RxStatus.loading());
+    try {
+      final res = await api.getUser();
+      res.isEmpty 
+          ? change(null, status: RxStatus.empty()) 
+          : change(res, status: RxStatus.success());
+    } catch (e) {
+      change(null, status: RxStatus.error(e.toString()));
+    }
+  }
+}
+```
+
+뷰 레이어에서 선언적 맵 처리:
+```dart
+controller.obx(
+  (state) => Text('안녕하세요, $state 님'),
+  onLoading: const CircularProgressIndicator(),
+  onEmpty: const Text('유저 정보를 찾지 못했습니다.'),
+  onError: (error) => Text('에러 발생: $error', style: const TextStyle(color: Colors.red)),
+);
+```
+
+---
+
+### 9. 🌐 다국어 및 로컬라이제이션 (`Translations` & `tr`)
+앱의 다국어 번역 리소스를 유연하고 반응형으로 관리하며, 유저의 설정에 따라 화면 언어를 실시간으로 동적 변경합니다.
+
+다국어 번역 사전 정의:
+```dart
+class MyTranslations extends Translations {
+  @override
+  Map<String, Map<String, String>> get keys => {
+    'en_US': {
+      'hello': 'Hello World',
+      'welcome': 'Welcome, @name!',
+    },
+    'ko_KR': {
+      'hello': '안녕하세요',
+      'welcome': '안녕하세요, @name님!',
+    }
+  };
+}
+```
+
+최상위 앱에 번역 등록 및 기본 언어 지정:
+```dart
+GetMaterialApp(
+  translations: MyTranslations(),
+  locale: const Locale('ko', 'KR'),
+  fallbackLocale: const Locale('en', 'US'),
+  child: const MyApp(),
+);
+```
+
+뷰 레이어에서 반응형으로 다국어 텍스트 사용:
+```dart
+// 1. 단순 번역 lookup
+Obx(() => Text('hello'.tr))
+
+// 2. 파라미터 치환 번역
+Obx(() => Text('welcome'.trParams({'name': '홍길동'})))
+```
+
+실시간 동적 언어 변경:
+```dart
+// 한국어로 변경
+Get.locale = const Locale('ko', 'KR');
+
+// 영어로 변경
+Get.locale = const Locale('en', 'US');
 ```
 
 ---
