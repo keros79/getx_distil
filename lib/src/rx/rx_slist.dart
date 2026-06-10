@@ -118,11 +118,11 @@ class RxSList<T> extends RxList<T> {
   /// the list content.
   ///
   /// Rules:
-  /// - If current status is [RxListStatus.error], do nothing (error is sticky).
   /// - If the list is empty → [RxListStatus.empty].
   /// - If the list has data → [RxListStatus.loaded].
+  /// - Any active error state is cleared.
   void _syncStatus() {
-    if (_status.value == RxListStatus.error) return;
+    _error.value = null;
     _status.value = isEmpty ? RxListStatus.empty : RxListStatus.loaded;
   }
 

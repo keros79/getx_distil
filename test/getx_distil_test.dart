@@ -1228,18 +1228,27 @@ void main() {
       expect(list, isEmpty);
     });
 
-    test('error status is sticky — mutations do not overwrite error', () {
+    test('error status is cleared and transitions to loaded/empty on mutations', () {
       final list = RxSList<int>([1, 2, 3]);
       list.status = RxListStatus.error;
       list.error = 'Boom';
 
-      // Mutations should NOT change status away from error
+      // Mutations should change status away from error and clear error message
       list.add(4);
-      expect(list.status, RxListStatus.error);
+      expect(list.status, RxListStatus.loaded);
+      expect(list.error, isNull);
+
+      list.status = RxListStatus.error;
+      list.error = 'Boom';
       list.assignAll([5, 6]);
-      expect(list.status, RxListStatus.error);
+      expect(list.status, RxListStatus.loaded);
+      expect(list.error, isNull);
+
+      list.status = RxListStatus.error;
+      list.error = 'Boom';
       list.clear();
-      expect(list.status, RxListStatus.error);
+      expect(list.status, RxListStatus.empty);
+      expect(list.error, isNull);
     });
 
     test('value setter auto-syncs status', () {
@@ -1524,20 +1533,22 @@ void main() {
       expect(val.value, isNull);
     });
 
-    test('error status is sticky — mutations do not overwrite error', () {
+    test('error status is cleared and transitions to loaded on mutations', () {
       final val = RxS<String>('initial');
       val.status = RxDataStatus.error;
       val.error = 'Boom';
 
-      // Setting value should NOT change status or clear error
+      // Setting value should change status to loaded and clear error
       val.value = 'new';
-      expect(val.status, RxDataStatus.error);
-      expect(val.error, 'Boom');
+      expect(val.status, RxDataStatus.loaded);
+      expect(val.error, isNull);
       expect(val.value, 'new');
 
+      val.status = RxDataStatus.error;
+      val.error = 'Boom';
       val.update((_) => 'updated');
-      expect(val.status, RxDataStatus.error);
-      expect(val.error, 'Boom');
+      expect(val.status, RxDataStatus.loaded);
+      expect(val.error, isNull);
       expect(val.value, 'updated');
     });
 

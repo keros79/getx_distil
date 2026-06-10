@@ -83,10 +83,10 @@ class RxS<T> extends Rxn<T> {
   /// the data content.
   ///
   /// Rules:
-  /// - If current status is [RxDataStatus.error], do nothing (error is sticky).
   /// - Any value mutation → [RxDataStatus.loaded].
+  /// - Any active error state is cleared.
   void _syncStatus() {
-    if (_status.value == RxDataStatus.error) return;
+    _error.value = null;
     _status.value = RxDataStatus.loaded;
   }
 
