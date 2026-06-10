@@ -10,7 +10,7 @@ import '../state_manager/obx.dart';
 enum RxListStatus { loading, loaded, empty, error }
 
 /// ─────────────────────────────────────────────────────────────────────────────
-/// RxSList<T>
+/// RxSList\<T\>
 /// ─────────────────────────────────────────────────────────────────────────────
 /// An [RxList] that carries its own loading/loaded/empty/error status alongside
 /// the reactive list data, so consumers never have to maintain a separate
