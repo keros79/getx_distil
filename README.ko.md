@@ -444,13 +444,13 @@ Obx(() => Text('hello'.tr))
 Obx(() => Text('welcome'.trParams({'name': '홍길동'})))
 ```
 
-실시간 동적 언어 변경:
+실시간 동적 언어 변경 (BuildContext를 통해 활성 라우트 갱신):
 ```dart
 // 한국어로 변경
-Get.locale = const Locale('ko', 'KR');
+Get.updateLocale(context, const Locale('ko', 'KR'));
 
 // 영어로 변경
-Get.locale = const Locale('en', 'US');
+Get.updateLocale(context, const Locale('en', 'US'));
 ```
 
 ---

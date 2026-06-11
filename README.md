@@ -446,13 +446,13 @@ Obx(() => Text('hello'.tr))
 Obx(() => Text('welcome'.trParams({'name': 'John Doe'})))
 ```
 
-Switch locale dynamically at runtime:
+Switch locale dynamically at runtime (using the BuildContext to refresh active routes):
 ```dart
 // Change locale to Spanish (or Korean)
-Get.locale = const Locale('ko', 'KR');
+Get.updateLocale(context, const Locale('ko', 'KR'));
 
 // Change locale to English
-Get.locale = const Locale('en', 'US');
+Get.updateLocale(context, const Locale('en', 'US'));
 ```
 
 ---

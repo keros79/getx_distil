@@ -12,105 +12,103 @@ class TestListPage extends StatelessWidget {
     // Wrap the entire body with Obx so that translation (.tr) texts of menu cards are updated in real-time when Get.locale changes.
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      body: Obx(() {
-        return Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24.0,
-              vertical: 32.0,
-            ),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 500),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // 1. Basic Rx & Actions
-                  _buildMenuCard(
-                    context,
-                    title: 'test_list_basic_rx_title'.tr,
-                    subtitle: 'test_list_basic_rx_desc'.tr,
-                    route: '/basic-rx',
-                    borderColor: Colors.amberAccent.withValues(alpha: 0.4),
-                  ),
-                  const SizedBox(height: 16),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 24.0,
+            vertical: 32.0,
+          ),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 1. Basic Rx & Actions
+                _buildMenuCard(
+                  context,
+                  title: 'test_list_basic_rx_title'.tr,
+                  subtitle: 'test_list_basic_rx_desc'.tr,
+                  route: '/basic-rx',
+                  borderColor: Colors.amberAccent.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 16),
 
-                  // 2. Scoped DI Stack -> Reorganized localization binding with nested DI stack test
-                  _buildMenuCard(
-                    context,
-                    title: 'test_list_scoped_di_title'.tr,
-                    subtitle: 'test_list_scoped_di_desc'.tr,
-                    route: '/nested-scope',
-                    borderColor: Colors.purpleAccent.withValues(alpha: 0.4),
-                  ),
-                  const SizedBox(height: 16),
+                // 2. Scoped DI Stack -> Reorganized localization binding with nested DI stack test
+                _buildMenuCard(
+                  context,
+                  title: 'test_list_scoped_di_title'.tr,
+                  subtitle: 'test_list_scoped_di_desc'.tr,
+                  route: '/nested-scope',
+                  borderColor: Colors.purpleAccent.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 16),
 
-                  // 3. Engine Safety Guard
-                  _buildMenuCard(
-                    context,
-                    title: 'test_list_safety_title'.tr,
-                    subtitle: 'test_list_safety_desc'.tr,
-                    route: '/safety',
-                    borderColor: Colors.greenAccent.withValues(alpha: 0.4),
-                  ),
-                  const SizedBox(height: 16),
+                // 3. Engine Safety Guard
+                _buildMenuCard(
+                  context,
+                  title: 'test_list_safety_title'.tr,
+                  subtitle: 'test_list_safety_desc'.tr,
+                  route: '/safety',
+                  borderColor: Colors.greenAccent.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 16),
 
-                  // 4. Pipeline & Performance
-                  _buildMenuCard(
-                    context,
-                    title: 'test_list_pipeline_title'.tr,
-                    subtitle: 'test_list_pipeline_desc'.tr,
-                    route: '/concurrent',
-                    borderColor: Colors.cyanAccent.withValues(alpha: 0.4),
-                  ),
-                  const SizedBox(height: 16),
+                // 4. Pipeline & Performance
+                _buildMenuCard(
+                  context,
+                  title: 'test_list_pipeline_title'.tr,
+                  subtitle: 'test_list_pipeline_desc'.tr,
+                  route: '/concurrent',
+                  borderColor: Colors.cyanAccent.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 16),
 
-                  // 5. RxSList Demo
-                  _buildMenuCard(
-                    context,
-                    title: '6. RxSList Basic',
-                    subtitle:
-                        'RxSList with auto-status tracking via RxList APIs',
-                    route: '/rx-slist',
-                    borderColor: Colors.indigoAccent.withValues(alpha: 0.4),
-                  ),
-                  const SizedBox(height: 16),
+                // 5. RxSList Demo
+                _buildMenuCard(
+                  context,
+                  title: '6. RxSList Basic',
+                  subtitle:
+                      'RxSList with auto-status tracking via RxList APIs',
+                  route: '/rx-slist',
+                  borderColor: Colors.indigoAccent.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 16),
 
-                  // 6. RxSList Paging Demo
-                  _buildMenuCard(
-                    context,
-                    title: '7. RxSList Paging',
-                    subtitle: 'Infinite-scroll paging with addAll + hasMore',
-                    route: '/rx-slist-paging',
-                    borderColor: Colors.tealAccent.withValues(alpha: 0.4),
-                  ),
-                  const SizedBox(height: 16),
+                // 6. RxSList Paging Demo
+                _buildMenuCard(
+                  context,
+                  title: '7. RxSList Paging',
+                  subtitle: 'Infinite-scroll paging with addAll + hasMore',
+                  route: '/rx-slist-paging',
+                  borderColor: Colors.tealAccent.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 16),
 
-                  // 7. RxS Demo
-                  _buildMenuCard(
-                    context,
-                    title: '8. RxS Single Value Status',
-                    subtitle:
-                        'RxS with loading/loaded/error auto-status tracking',
-                    route: '/rx-s',
-                    borderColor: Colors.deepOrangeAccent.withValues(alpha: 0.4),
-                  ),
-                  const SizedBox(height: 16),
+                // 7. RxS Demo
+                _buildMenuCard(
+                  context,
+                  title: '8. RxS Single Value Status',
+                  subtitle:
+                      'RxS with loading/loaded/error auto-status tracking',
+                  route: '/rx-s',
+                  borderColor: Colors.deepOrangeAccent.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 16),
 
-                  // 8. Extra Settings
-                  _buildMenuCard(
-                    context,
-                    title: 'test_list_settings_card_title'.tr,
-                    subtitle: 'test_list_settings_card_desc'.tr,
-                    route: '/settings',
-                    borderColor: Colors.pinkAccent.withValues(alpha: 0.4),
-                  ),
-                ],
-              ),
+                // 8. Extra Settings
+                _buildMenuCard(
+                  context,
+                  title: 'test_list_settings_card_title'.tr,
+                  subtitle: 'test_list_settings_card_desc'.tr,
+                  route: '/settings',
+                  borderColor: Colors.pinkAccent.withValues(alpha: 0.4),
+                ),
+              ],
             ),
           ),
-        );
-      }),
+        ),
+      ),
     );
   }
 
