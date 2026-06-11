@@ -37,6 +37,8 @@ Flutter를 위한 **고성능 마이크로 상태 관리 및 트리 스코프 �
 * ⚡ **고속 트랙(Fast-Path) 추적 플래그 (`Notifier.isTracking`)**
   오리지널 GetX에서는 `Obx` 외부(일반 비즈니스 로직 루프, 백그라운드 연산 등)에서 반응형 변수를 단순히 읽기만 해도 매번 전역 프록시(`RxInterface.proxy`) 탐색과 null 여부 체크를 거치게 됩니다. `getx_distil`은 정적 부울 플래그 `isTracking`을 도입하여 `Obx` 빌드 중이 아닐 때는 복잡한 프록시 탐색과 등록 파이프라인을 원천적으로 우회(bypass)하도록 개선함으로써, 대량 데이터 순회 및 연산 시의 CPU 부하와 불필요한 탐색 오버헤드를 극적으로 제거했습니다.
 
+> **[getx_distil vs GetX vs RiverPod3.0 비교](https://getxdistil.web.app/comparison)**
+
 ---
 
 ## 🛠️ 필수 컴포넌트 및 빠른 시작

@@ -37,6 +37,8 @@ However, as the Flutter ecosystem matured toward declarative routing (like `GoRo
 * ⚡ **High-Performance Fast-Path Tracking (`Notifier.isTracking`)**
   In original GetX, reading any reactive variable (even in normal business logic loops or background tasks outside of `Obx` widgets) triggers a lookup of the global tracking proxy. `getx_distil` introduces a lightweight static boolean flag `isTracking`. Outside of active `Obx` build frames, this flag is `false`, bypassing the entire proxy lookup and dependency registration pipeline. This dramatically reduces CPU cycles during heavy calculation loops or traversals.
 
+> **[getx_distil vs GetX vs RiverPod3.0 Comparison](https://getxdistil.web.app/comparison)**
+
 ---
 
 ## 🛠️ Essential Components & Quick Start
