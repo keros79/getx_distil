@@ -1,3 +1,8 @@
+## 1.1.4
+
+* **Introduced `Get.updateLocale`**: Added a new static method `Get.updateLocale(BuildContext context, Locale val)` that dynamically updates `Get.locale` and safely refreshes the active `GoRouter` configuration (without a compile-time dependency on `go_router`) to immediately apply translations on the current screen without resetting navigation or widget states.
+* **Avoided Const Optimization Issues**: Updated localization guides in both `README.md` and `README.ko.md` to recommend using `updateLocale` and removing `const` from page-level router builders to guarantee UI updates when reloading routes.
+
 ## 1.1.3
 
 * **Fixed Sticky Error Status**: Resolved an issue in both `RxSList` and `RxS` where the `error` state was sticky and failed to transition back to `loaded` or `empty` when subsequent data mutations or reload attempts occurred.
