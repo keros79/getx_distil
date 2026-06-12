@@ -1,23 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:getx_distil/get.dart';
 import 'package:go_router/go_router.dart';
+import 'test_list_controller.dart';
 
-class TestListPage extends StatelessWidget {
+class TestListPage extends GetView<TestListController> {
   const TestListPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Wrap the entire body with Obx so that translation (.tr) texts of menu cards are updated in real-time when Get.locale changes.
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
+      appBar: AppBar(
+        title: Text(
+          'test_list_title'.tr,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          // Localization toggle
+          IconButton(
+            icon: Text(
+              controller.isKorean ? '🇰🇷' : '🇺🇸',
+              style: const TextStyle(fontSize: 20),
+            ),
+            tooltip: 'Toggle Language',
+            onPressed: controller.toggleLocale,
+          ),
+          // Theme toggle — isDarkMode는 별도 Rx이므로 Obx 유지
+          Obx(
+            () => IconButton(
+              icon: Icon(
+                controller.isDarkModeRx.value
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+              ),
+              tooltip: 'Toggle Theme',
+              onPressed: controller.toggleTheme,
+            ),
+          ),
+        ],
+      ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24.0,
-            vertical: 32.0,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
           child: Container(
             constraints: const BoxConstraints(maxWidth: 500),
             child: Column(
@@ -34,7 +60,7 @@ class TestListPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // 2. Scoped DI Stack -> Reorganized localization binding with nested DI stack test
+                // 2. Scoped DI Stack
                 _buildMenuCard(
                   context,
                   title: 'test_list_scoped_di_title'.tr,
@@ -68,8 +94,7 @@ class TestListPage extends StatelessWidget {
                 _buildMenuCard(
                   context,
                   title: '6. RxSList Basic',
-                  subtitle:
-                      'RxSList with auto-status tracking via RxList APIs',
+                  subtitle: 'RxSList with auto-status tracking via RxList APIs',
                   route: '/rx-slist',
                   borderColor: Colors.indigoAccent.withValues(alpha: 0.4),
                 ),

@@ -227,8 +227,7 @@ class Get {
       '   ${globalKeys.isEmpty ? 'None' : globalKeys.join(', ')}\n\n'
       '🌟 Registered Immortal Services:\n'
       '   ${immortalKeys.isEmpty ? 'None' : immortalKeys.join(', ')}\n\n'
-      'Make sure you registered it via Get.put() / Get.lazyPut() or wrapped your view with a BindingWidget.'
+      'Make sure you registered it via Get.put() / Get.lazyPut() or wrapped your view with a BindingWidget.',
     );
   }
 }
-

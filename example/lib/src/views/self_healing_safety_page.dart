@@ -16,7 +16,7 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: Obx(() => Text('safety_appbar_title'.tr)),
+        title: Text('safety_appbar_title'.tr),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => context.go('/'),
@@ -54,10 +54,10 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Obx(() => Text(
+          Text(
             'safety_healing_title'.tr,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-          )),
+          ),
           const SizedBox(height: 16),
           Obx(() {
             final val = controller.healingCount.value;
@@ -71,7 +71,7 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
               ),
               child: Column(
                 children: [
-                  Obx(() => Text('safety_healed_val_label'.tr, style: const TextStyle(fontSize: 11, color: Colors.grey))),
+                  Text('safety_healed_val_label'.tr, style: const TextStyle(fontSize: 11, color: Colors.grey)),
                   const SizedBox(height: 4),
                   Text(
                     '$val',
@@ -94,10 +94,10 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
               ),
               onPressed: controller.triggerBuildMutation,
               icon: const Icon(Icons.flash_on_rounded),
-              label: Obx(() => Text(
+              label: Text(
                 'safety_simulate_build_btn'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold),
-              )),
+              ),
             ),
           ),
         ],
@@ -116,10 +116,10 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Obx(() => Text(
+          Text(
             'safety_async_title'.tr,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-          )),
+          ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
@@ -133,10 +133,10 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
               ),
               onPressed: controller.simulateAsyncObxError,
               icon: const Icon(Icons.bug_report_rounded),
-              label: Obx(() => Text(
+              label: Text(
                 'safety_trigger_error_btn'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold),
-              )),
+              ),
             ),
           ),
           Obx(() {
@@ -158,10 +158,10 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
                     children: [
                       const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 16),
                       const SizedBox(width: 6),
-                      Obx(() => Text(
+                      Text(
                         'safety_error_caught_label'.tr,
                         style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12),
-                      )),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),

@@ -16,7 +16,7 @@ class BasicRxPage extends GetView<BasicRxController> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: Obx(() => Text('basic_rx_appbar_title'.tr)),
+        title: Text('basic_rx_appbar_title'.tr),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => context.go('/'),
@@ -60,20 +60,20 @@ class BasicRxPage extends GetView<BasicRxController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Obx(() => Text(
+              Text(
                 'basic_rx_counter_title'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              )),
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Obx(() => Text(
+                child: Text(
                   'basic_rx_obx_badge'.tr,
                   style: TextStyle(color: primaryColor, fontSize: 11, fontWeight: FontWeight.bold),
-                )),
+                ),
               ),
             ],
           ),
@@ -101,10 +101,10 @@ class BasicRxPage extends GetView<BasicRxController> {
               ),
               onPressed: controller.increment,
               icon: const Icon(Icons.add_rounded),
-              label: Obx(() => Text(
+              label: Text(
                 'basic_rx_increment_btn'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold),
-              )),
+              ),
             ),
           )
         ],
@@ -144,10 +144,10 @@ class BasicRxPage extends GetView<BasicRxController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Obx(() => Text(
+              Text(
                 'basic_rx_status_label'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              )),
+              ),
               Obx(() {
                 final status = controller.searchStatus.value;
                 Color statusColor = Colors.grey;
@@ -198,10 +198,10 @@ class BasicRxPage extends GetView<BasicRxController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Obx(() => Text(
+          Text(
             'basic_rx_list_title'.tr,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-          )),
+          ),
           const SizedBox(height: 16),
           
           // Area to display the item list
@@ -216,10 +216,10 @@ class BasicRxPage extends GetView<BasicRxController> {
                   color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.02),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Obx(() => Text(
+                child: Text(
                   'basic_rx_list_empty'.tr,
                   style: const TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
-                )),
+                ),
               );
             }
             
@@ -273,10 +273,10 @@ class BasicRxPage extends GetView<BasicRxController> {
               ),
               onPressed: controller.addRxItem,
               icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
-              label: Obx(() => Text(
+              label: Text(
                 'basic_rx_list_add_btn'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold),
-              )),
+              ),
             ),
           ),
         ],

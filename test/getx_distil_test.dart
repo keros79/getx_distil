@@ -62,8 +62,8 @@ class SiblingControllerA extends GetxController {
   @override
   void onClose() {
     try {
-      final sibling = Get.find<SiblingControllerB>();
-      resolvedSiblingDuringClose = (sibling != null);
+      Get.find<SiblingControllerB>();
+      resolvedSiblingDuringClose = true;
     } catch (e) {
       resolvedSiblingDuringClose = false;
     }

@@ -6,6 +6,7 @@ import 'src/config/app_config.dart';
 
 // Import New Controllers and Views
 import 'src/views/test_list_page.dart';
+import 'src/views/test_list_controller.dart';
 import 'src/views/basic_rx_controller.dart';
 import 'src/views/basic_rx_page.dart';
 import 'src/views/nested_scope_controller.dart';
@@ -189,7 +190,13 @@ class MyApp extends StatelessWidget {
       initialLocation: '/',
       routes: [
         // 1. Hub Start Page
-        GoRoute(path: '/', builder: (context, state) => const TestListPage()),
+        GoRoute(
+          path: '/',
+          builder: (context, state) => BindingWidget(
+            bindings: [Bind<TestListController>(() => TestListController())],
+            child: const TestListPage(),
+          ),
+        ),
 
         // 2. Course 1: Basic Rx & Actions
         GoRoute(

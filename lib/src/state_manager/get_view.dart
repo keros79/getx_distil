@@ -46,7 +46,7 @@ abstract class GetView<T> extends StatelessWidget {
     final context = contexts[this];
     if (context == null) {
       throw FlutterError(
-        'GetView<$T>.controller was called outside of the build method, or before the build method started.'
+        'GetView<$T>.controller was called outside of the build method, or before the build method started.',
       );
     }
     return Get.find<T>(context);

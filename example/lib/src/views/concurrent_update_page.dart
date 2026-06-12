@@ -16,7 +16,7 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: Obx(() => Text('concurrent_appbar_title'.tr)),
+        title: Text('concurrent_appbar_title'.tr),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => context.go('/'),
@@ -57,10 +57,11 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Obx(() => Text(
+              Text(
                 'concurrent_fifo_title'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              )),
+              ),
+              // isProcessingFifo는 Rx → Obx 유지
               Obx(() {
                 final active = controller.isProcessingFifo.value;
                 return Container(
@@ -94,17 +95,17 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
               ),
               onPressed: controller.triggerSequentialTask,
               icon: const Icon(Icons.touch_app_rounded),
-              label: Obx(() => Text(
+              label: Text(
                 'concurrent_spam_btn'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold),
-              )),
+              ),
             ),
           ),
           const SizedBox(height: 16),
+          // fifoQueue는 Rx → Obx 유지
           Obx(() {
             final logs = controller.fifoQueue;
             if (logs.isEmpty) return const SizedBox();
-            // Minimally expose only the single most recent completed/in-progress log
             final latestLog = logs.first;
             return Container(
               width: double.infinity,
@@ -146,20 +147,20 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Obx(() => Text(
+              Text(
                 'concurrent_bench_title'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              )),
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Obx(() => Text(
+                child: Text(
                   'concurrent_bench_items_badge'.tr,
                   style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold),
-                )),
+                ),
               ),
             ],
           ),
@@ -177,10 +178,10 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                       elevation: 0,
                     ),
                     onPressed: controller.runStandardListBenchmark,
-                    child: Obx(() => Text(
+                    child: Text(
                       'concurrent_standard_loop_btn'.tr,
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                    )),
+                    ),
                   ),
                 ),
               ),
@@ -196,16 +197,17 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                       elevation: 0,
                     ),
                     onPressed: controller.runRxListBenchmark,
-                    child: Obx(() => Text(
+                    child: Text(
                       'concurrent_rx_batch_btn'.tr,
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                    )),
+                    ),
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
+          // standardListBuildTime, rxListBuildTime는 Rx → Obx 유지
           Obx(() {
             final tStandard = controller.standardListBuildTime.value;
             final tRx = controller.rxListBuildTime.value;
@@ -225,7 +227,7 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Obx(() => Text('concurrent_standard_label'.tr, style: const TextStyle(fontSize: 11, color: Colors.grey))),
+                        Text('concurrent_standard_label'.tr, style: const TextStyle(fontSize: 11, color: Colors.grey)),
                         Text('${tStandard}ms', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.redAccent)),
                       ],
                     ),
@@ -259,7 +261,7 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Obx(() => Text('concurrent_rx_label'.tr, style: const TextStyle(fontSize: 11, color: Colors.grey))),
+                        Text('concurrent_rx_label'.tr, style: const TextStyle(fontSize: 11, color: Colors.grey)),
                         Text('${tRx}ms', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.greenAccent)),
                       ],
                     ),
