@@ -487,10 +487,10 @@ class HomePage extends StatelessWidget {
 Switch locale dynamically at runtime (using the BuildContext to refresh active routes):
 ```dart
 // Change locale to Spanish (or Korean)
-Get.updateLocale(context, const Locale('ko', 'KR'));
+Get.locale = const Locale('ko', 'KR');
 
 // Change locale to English
-Get.updateLocale(context, const Locale('en', 'US'));
+Get.locale = const Locale('en', 'US');
 ```
 
 ---
