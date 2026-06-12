@@ -260,6 +260,27 @@ final specialController = Get.find<CounterController>(null, 'special_counter');
 > `getx_distil` features a **Hybrid DI** system. If you provide a `BuildContext` like `Get.find(context)`, it will prioritize widget tree-scoped lookup (`BindingWidget`). If it is not found, it seamlessly falls back to resolving the dependency from the global registry.
 > 
 > Furthermore, since v1.0.1, if a controller is registered via `BindingWidget` and has already been instantiated in the widget tree, you can retrieve it **without a context** using a simple `Get.find<T>()` call via a safe, non-leaking static weak reference cache.
+> 
+> **How Get.find() Resolves Dependencies:**
+> 
+> * **When `BuildContext` is provided (`Get.find<T>(context)`):**
+>   1. **Global Immortal:** Checks if the requested type is a global `GetxService` (immortal widget-scoped service).
+>   2. **Widget Tree:** Traverses up the widget tree to find a matching `BindingWidget` scope.
+>   3. **Global Registry:** Falls back to global registry (`Get.put` / `Get.lazyPut`).
+>   4. **Global Weak Registry:** Falls back to matching active/instantiated widget-scoped controllers.
+> 
+> * **When `BuildContext` is NOT provided (`Get.find<T>()`):**
+>   1. **Global Registry:** Prioritizes checking the global registry (`Get.put` / `Get.lazyPut`).
+>   2. **Global Immortal:** Checks if the requested type is a global `GetxService` registered via a widget scope.
+>   3. **Global Weak Registry / Active States:** Checks the weak reference cache or active `BindingWidget` states to find/instantiate widget-scoped controllers.
+> 
+> ```dart
+> // 1. Context-based Lookup (prioritizes widget tree)
+> final localController = Get.find<CounterController>(context);
+> 
+> // 2. Context-less Lookup (prioritizes global registry)
+> final globalController = Get.find<CounterController>();
+> ```
 
 > [!WARNING]
 > **Best Practice for Context-less Lookups inside Controllers**

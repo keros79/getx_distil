@@ -258,6 +258,27 @@ final specialController = Get.find<CounterController>(null, 'special_counter');
 > `getx_distil`은 **하이브리드 DI**를 지원합니다. `Get.find(context)`와 같이 `BuildContext`를 함께 전달하면 화면 위젯 트리 범위의 DI(`BindingWidget`)에서 인스턴스를 우선 탐색하며, 존재하지 않을 경우 자동으로 전역 범위(Global Registry)를 찾아 인스턴스를 반환합니다.
 > 
 > 또한 v1.0.1부터는 `BindingWidget`에 등록된 스코프 컨트롤러라도 위젯 트리에서 한 번 생성되었다면, 메모리 누수가 없는 안전한 약한 참조 캐시(Weak Reference Cache)를 통해 **`BuildContext` 없이 `Get.find<T>()` 호출만으로 조회**할 수 있습니다.
+> 
+> **Get.find() 의존성 탐색 순서:**
+> 
+> * **`BuildContext`가 있을 때 (`Get.find<T>(context)`):**
+>   1. **전역 불멸 서비스 (Global Immortal):** 요청한 타입이 전역 `GetxService`(소멸되지 않는 위젯 스코프 서비스)인지 먼저 확인합니다.
+>   2. **위젯 트리 (Widget Tree):** 위젯 트리를 상위로 거슬러 올라가며 일치하는 `BindingWidget` 스코프를 탐색합니다.
+>   3. **전역 레지스트리 (Global Registry):** 전역 레지스트리(`Get.put` / `Get.lazyPut`)에서 탐색을 시도합니다.
+>   4. **전역 약한 레지스트리 (Global Weak Registry):** 위젯 스코프 내에서 이미 실체화된 적이 있는 컨트롤러를 약한 참조로 매칭합니다.
+> 
+> * **`BuildContext`가 없을 때 (`Get.find<T>()`):**
+>   1. **전역 레지스트리 (Global Registry):** 전역 레지스트리(`Get.put` / `Get.lazyPut`) 조회를 우선합니다.
+>   2. **전역 불멸 서비스 (Global Immortal):** 위젯 스코프를 통해 등록된 전역 `GetxService` 인스턴스 중 일치하는 항목이 있는지 확인합니다.
+>   3. **전역 약한 레지스트리 및 활성 상태 (Global Weak Registry / Active States):** 약한 참조 캐시나 활성화되어 있는 `BindingWidget` 상태를 뒤져 매칭되는 위젯 스코프 컨트롤러를 찾아(혹은 온디맨드로 생성하여) 반환합니다.
+> 
+> ```dart
+> // 1. 컨텍스트 기반 조회 (위젯 트리 우선 탐색)
+> final localController = Get.find<CounterController>(context);
+> 
+> // 2. 컨텍스트 없는 조회 (전역 레지스트리 우선 탐색)
+> final globalController = Get.find<CounterController>();
+> ```
 
 > [!WARNING]
 > **컨트롤러 내부에서 Context 없이 의존성 조회 시 권장 사항 (Best Practice)**
