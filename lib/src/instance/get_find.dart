@@ -95,12 +95,13 @@ class Get {
   }
 
   /// Registers a global dependency lazily. It will be instantiated on the first [find] call.
-  static void lazyPut<T>(T Function() builder, {String? tag, bool fenix = false}) {
+  static void lazyPut<T>(
+    T Function() builder, {
+    String? tag,
+    bool fenix = false,
+  }) {
     final key = _getKey(T, tag);
-    _globalRegistry[key] = _Dependency(
-      factory: builder,
-      fenix: fenix,
-    );
+    _globalRegistry[key] = _Dependency(factory: builder, fenix: fenix);
   }
 
   /// Deletes a registered dependency from the global registry, invoking onClose if applicable.
@@ -206,7 +207,9 @@ class Get {
       }
     }
 
-    final String contextWidgetName = context != null ? context.widget.runtimeType.toString() : 'Unknown';
+    final String contextWidgetName = context != null
+        ? context.widget.runtimeType.toString()
+        : 'Unknown';
     final List<String> ancestors = [];
     if (context != null) {
       context.visitAncestorElements((element) {
@@ -214,7 +217,9 @@ class Get {
         return true;
       });
     }
-    final String searchPath = ancestors.isNotEmpty ? ancestors.join(' -> ') : 'N/A';
+    final String searchPath = ancestors.isNotEmpty
+        ? ancestors.join(' -> ')
+        : 'N/A';
     final List<String> globalKeys = _globalRegistry.keys.toList();
     final List<Type> immortalKeys = BindingWidgetState.getImmortalKeys();
 

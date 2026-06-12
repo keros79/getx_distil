@@ -41,9 +41,9 @@ class TestListPage extends GetView<TestListController> {
           ),
         ],
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+        child: Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 500),
             child: Column(
