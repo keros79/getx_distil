@@ -438,13 +438,51 @@ GetMaterialApp(
 ```
 
 Render localized text reactively in your View layer:
-```dart
-// 1. Simple translation lookup
-Obx(() => Text('hello'.tr))
 
-// 2. Parameter-injected translation
-Obx(() => Text('welcome'.trParams({'name': 'John Doe'})))
+**Case 1. When extending `GetView` (recommended)**
+
+`GetViewElement.build()` automatically wraps `build()` with the `Notifier` tracking scope, so calling `.tr` inside `build()` automatically subscribes to `Get.locale(Rx)`. No separate `Obx` is needed:
+
+```dart
+// Extending GetView<T> wraps build() in a Notifier tracking scope
+class HomePage extends GetView<HomeController> {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('hello'.tr),                   // ← No Obx needed, auto-subscribed
+      ),
+      body: Text('welcome'.trParams({'name': 'John Doe'})), // ← No Obx needed
+    );
+  }
+}
 ```
+
+**Case 2. When using `StatelessWidget` / `StatefulWidget`**
+
+`StatelessWidget` has no Notifier tracking scope, so `.tr` must be wrapped with `Obx` to reactively reflect locale changes. Wrapping the entire `Scaffold` with a single `Obx` avoids repeating `Obx` for every widget:
+
+```dart
+// StatelessWidget: wrap the entire Scaffold with Obx for locale reactivity
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() => Scaffold(                          // ← Single Obx wrapping Scaffold
+      appBar: AppBar(
+        title: Text('hello'.tr),                       // ← Now reactive
+      ),
+      body: Text('welcome'.trParams({'name': 'John Doe'})), // ← Now reactive
+    ));
+  }
+}
+```
+
+> [!TIP]
+> Using a single `Obx` at the top level (direct child of Scaffold) makes every `.tr` call in the page reactive, keeping the code concise.
 
 Switch locale dynamically at runtime (using the BuildContext to refresh active routes):
 ```dart

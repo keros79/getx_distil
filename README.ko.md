@@ -436,13 +436,51 @@ GetMaterialApp(
 ```
 
 뷰 레이어에서 반응형으로 다국어 텍스트 사용:
-```dart
-// 1. 단순 번역 lookup
-Obx(() => Text('hello'.tr))
 
-// 2. 파라미터 치환 번역
-Obx(() => Text('welcome'.trParams({'name': '홍길동'})))
+**Case 1. `GetView`를 상속하는 페이지 (권장)**
+
+`GetViewElement.build()`가 자동으로 `Notifier` 추적 스코프를 적용하므로, `build()` 내부에서 `.tr`을 바로 호출해도 `Get.locale(Rx)`이 자동 구독됩니다. 별도의 `Obx`가 필요 없습니다:
+
+```dart
+// GetView<T>를 상속하면 build() 전체가 Notifier 추적 스코프로 감싸집니다
+class HomePage extends GetView<HomeController> {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('hello'.tr),                   // ← Obx 불필요, 자동 구독
+      ),
+      body: Text('welcome'.trParams({'name': '홍길동'})), // ← Obx 불필요
+    );
+  }
+}
 ```
+
+**Case 2. `StatelessWidget` / `StatefulWidget` 사용 시**
+
+`StatelessWidget`에는 Notifier 추적 스코프가 없으므로, `.tr`이 locale 변경 시 반응형으로 갱신되려면 `Obx`로 감싸야 합니다. `Scaffold` 전체를 `Obx`로 감싸면 개별 위젯마다 `Obx`를 반복하지 않아도 됩니다:
+
+```dart
+// StatelessWidget은 Scaffold 전체를 Obx로 감싸서 locale 변경 감지
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() => Scaffold(                          // ← Scaffold 전체 Obx
+      appBar: AppBar(
+        title: Text('hello'.tr),                       // ← 반응형 동작
+      ),
+      body: Text('welcome'.trParams({'name': '홍길동'})), // ← 반응형 동작
+    ));
+  }
+}
+```
+
+> [!TIP]
+> `Obx`를 최상위 레벨(Scaffold 직계 자식)에 한 번만 사용하면 페이지 전체의 `.tr`이 모두 반응형으로 동작하므로 코드가 간결해집니다.
 
 실시간 동적 언어 변경 (BuildContext를 통해 활성 라우트 갱신):
 ```dart
