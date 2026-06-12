@@ -6,13 +6,13 @@ import '../state_manager/obx.dart';
 /// ─────────────────────────────────────────────────────────────────────────────
 /// RxListStatus
 /// ─────────────────────────────────────────────────────────────────────────────
-/// Represents the four fundamental states of an asynchronous data list.
-enum RxListStatus { loading, loaded, empty, error }
+/// Represents the five fundamental states of an asynchronous data list.
+enum RxListStatus { idle, loading, loaded, empty, error }
 
 /// ─────────────────────────────────────────────────────────────────────────────
 /// RxSList\<T\>
 /// ─────────────────────────────────────────────────────────────────────────────
-/// An [RxList] that carries its own loading/loaded/empty/error status alongside
+/// An [RxList] that carries its own idle/loading/loaded/empty/error status alongside
 /// the reactive list data, so consumers never have to maintain a separate
 /// status observable.
 ///
@@ -59,6 +59,7 @@ enum RxListStatus { loading, loaded, empty, error }
 ///
 /// // ── UI binding ──────────────────────────────────────────────────
 /// items.on(
+///   idle: () => const Text('Idle'),
 ///   loading: () => const CircularProgressIndicator(),
 ///   loaded:  (data) => ListView.builder(...),
 ///   empty:   () => const Text('No items'),
@@ -70,7 +71,7 @@ class RxSList<T> extends RxList<T> {
 
   /// Internal status observable — read via [status] getter, mutated via
   /// the [status] setter for clean DX.
-  final Rx<RxListStatus> _status = Rx<RxListStatus>(RxListStatus.loading);
+  final Rx<RxListStatus> _status = Rx<RxListStatus>(RxListStatus.idle);
 
   /// The current status of this list.
   RxListStatus get status => _status.value;
@@ -108,9 +109,29 @@ class RxSList<T> extends RxList<T> {
 
   /// Creates an [RxSList] optionally pre-populated with [initial] elements.
   ///
-  /// The initial status is [RxListStatus.loading] by default so that the
-  /// UI shows a loader until the first data mutation.
+  /// The initial status is [RxListStatus.idle] by default so that the
+  /// UI shows an idle state until the first data mutation.
   RxSList([super.initial]);
+
+  // ─── Status Mutator Helpers ────────────────────────────────────────────────
+
+  /// Transitions the status to [RxListStatus.idle].
+  void setIdle() => status = RxListStatus.idle;
+
+  /// Transitions the status to [RxListStatus.loading].
+  void setLoading() => status = RxListStatus.loading;
+
+  /// Transitions the status to [RxListStatus.loaded].
+  void setLoaded() => status = RxListStatus.loaded;
+
+  /// Transitions the status to [RxListStatus.empty].
+  void setEmpty() => status = RxListStatus.empty;
+
+  /// Sets the error message and transitions the status to [RxListStatus.error].
+  void setError(String errorMsg) {
+    error = errorMsg;
+    status = RxListStatus.error;
+  }
 
   // ─── Internal: auto-sync status after mutation ─────────────────────────────
 
@@ -176,11 +197,11 @@ class RxSList<T> extends RxList<T> {
 // ─── Extension: .ops — List<T> → RxSList<T> ───────────────────────────────────
 
 extension RxSListOpsExt<T> on List<T> {
-  /// Converts a plain [List] into an [RxSList] with initial [RxListStatus.loading].
+  /// Converts a plain [List] into an [RxSList] with initial [RxListStatus.idle].
   ///
   /// ```dart
   /// final items = <String>[].ops;
-  /// print(items.status); // RxListStatus.loading
+  /// print(items.status); // RxListStatus.idle
   /// ```
   RxSList<T> get ops => RxSList<T>(this);
 }
@@ -197,6 +218,7 @@ extension RxSListOnExt<T> on RxSList<T> {
   ///
   /// ```dart
   /// Obx(() => items.on(
+  ///   idle: () => const Center(child: Text('Idle')),
   ///   loading: () => const Center(child: CircularProgressIndicator()),
   ///   loaded:  (data) => ListView.builder(
   ///     itemCount: data.length,
@@ -207,12 +229,15 @@ extension RxSListOnExt<T> on RxSList<T> {
   /// ));
   /// ```
   Widget on({
+    Widget Function()? idle,
     required Widget Function() loading,
     required Widget Function(List<T> data) loaded,
     Widget Function()? empty,
     Widget Function(String error)? error,
   }) {
     switch (_status.value) {
+      case RxListStatus.idle:
+        return idle != null ? idle() : const SizedBox.shrink();
       case RxListStatus.loading:
         return loading();
       case RxListStatus.loaded:

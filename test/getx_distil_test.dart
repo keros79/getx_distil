@@ -1115,15 +1115,15 @@ void main() {
   // ─── RxSList Tests ──────────────────────────────────────────────────────────
 
   group('RxSList Tests', () {
-    test('RxSList initial status is loading', () {
+    test('RxSList initial status is idle', () {
       final list = RxSList<int>();
-      expect(list.status, RxListStatus.loading);
+      expect(list.status, RxListStatus.idle);
       expect(list, isEmpty);
     });
 
-    test('RxSList initial status with pre-populated data is still loading', () {
+    test('RxSList initial status with pre-populated data is still idle', () {
       final list = RxSList<int>([1, 2, 3]);
-      expect(list.status, RxListStatus.loading);
+      expect(list.status, RxListStatus.idle);
       expect(list.length, 3);
     });
 
@@ -1160,6 +1160,9 @@ void main() {
 
     test('status setter manually transitions status', () {
       final list = RxSList<int>();
+      expect(list.status, RxListStatus.idle);
+
+      list.status = RxListStatus.loading;
       expect(list.status, RxListStatus.loading);
 
       list.status = RxListStatus.loaded;
@@ -1172,17 +1175,38 @@ void main() {
       expect(list.status, RxListStatus.error);
     });
 
+    test('status helper methods manually transition status', () {
+      final list = RxSList<int>();
+      expect(list.status, RxListStatus.idle);
+
+      list.setLoading();
+      expect(list.status, RxListStatus.loading);
+
+      list.setLoaded();
+      expect(list.status, RxListStatus.loaded);
+
+      list.setEmpty();
+      expect(list.status, RxListStatus.empty);
+
+      list.setError('custom error');
+      expect(list.status, RxListStatus.error);
+      expect(list.error, 'custom error');
+
+      list.setIdle();
+      expect(list.status, RxListStatus.idle);
+    });
+
     test('.ops extension converts List to RxSList', () {
       final list = <int>[10, 20].ops;
       expect(list, isA<RxSList<int>>());
-      expect(list.status, RxListStatus.loading);
+      expect(list.status, RxListStatus.idle);
       expect(list.rawList, [10, 20]);
     });
 
     test('.ops on empty list', () {
       final list = <String>[].ops;
       expect(list, isA<RxSList<String>>());
-      expect(list.status, RxListStatus.loading);
+      expect(list.status, RxListStatus.idle);
       expect(list, isEmpty);
     });
 
@@ -1212,7 +1236,7 @@ void main() {
 
     test('add() auto-transitions from empty to loaded', () {
       final list = RxSList<int>();
-      expect(list.status, RxListStatus.loading);
+      expect(list.status, RxListStatus.idle);
 
       list.add(42);
       expect(list.status, RxListStatus.loaded);
@@ -1288,10 +1312,31 @@ void main() {
       expect(list.length, 100);
     });
 
-    testWidgets('on() renders loading state initially', (
+    testWidgets('on() renders idle state initially', (
       WidgetTester tester,
     ) async {
       final list = RxSList<String>();
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Obx(
+            () => list.on(
+              idle: () => const Text('Idle...'),
+              loading: () => const Text('Loading...'),
+              loaded: (data) => Text('Loaded: ${data.length} items'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Idle...'), findsOneWidget);
+    });
+
+    testWidgets('on() renders loading state initially', (
+      WidgetTester tester,
+    ) async {
+      final list = RxSList<String>()..setLoading();
 
       await tester.pumpWidget(
         Directionality(
@@ -1311,7 +1356,7 @@ void main() {
     testWidgets('on() renders loaded state after assignAll', (
       WidgetTester tester,
     ) async {
-      final list = RxSList<String>();
+      final list = RxSList<String>()..setLoading();
 
       await tester.pumpWidget(
         Directionality(
@@ -1336,7 +1381,7 @@ void main() {
     testWidgets('on() renders empty state when empty callback provided', (
       WidgetTester tester,
     ) async {
-      final list = RxSList<int>([1, 2, 3]);
+      final list = RxSList<int>([1, 2, 3])..setLoading();
 
       await tester.pumpWidget(
         Directionality(
@@ -1491,7 +1536,7 @@ void main() {
     testWidgets('on() reactively updates when status changes via setter', (
       WidgetTester tester,
     ) async {
-      final list = RxSList<String>();
+      final list = RxSList<String>()..setLoading();
 
       await tester.pumpWidget(
         Directionality(
@@ -1527,9 +1572,9 @@ void main() {
   // ─── RxS Tests ──────────────────────────────────────────────────────────────
 
   group('RxS Tests', () {
-    test('RxS initial status is loading', () {
+    test('RxS initial status is idle', () {
       final val = RxS<int>();
-      expect(val.status, RxDataStatus.loading);
+      expect(val.status, RxDataStatus.idle);
       expect(val.value, isNull);
     });
 
@@ -1554,6 +1599,9 @@ void main() {
 
     test('status setter manually transitions status', () {
       final val = RxS<int>();
+      expect(val.status, RxDataStatus.idle);
+
+      val.status = RxDataStatus.loading;
       expect(val.status, RxDataStatus.loading);
 
       val.status = RxDataStatus.loaded;
@@ -1561,6 +1609,45 @@ void main() {
 
       val.status = RxDataStatus.error;
       expect(val.status, RxDataStatus.error);
+    });
+
+    test('status helper methods manually transition status', () {
+      final val = RxS<int>();
+      expect(val.status, RxDataStatus.idle);
+
+      val.setLoading();
+      expect(val.status, RxDataStatus.loading);
+
+      val.setLoaded();
+      expect(val.status, RxDataStatus.loaded);
+
+      val.setError('custom error');
+      expect(val.status, RxDataStatus.error);
+      expect(val.error, 'custom error');
+
+      val.setIdle();
+      expect(val.status, RxDataStatus.idle);
+    });
+
+    testWidgets('on() renders idle state initially', (
+      WidgetTester tester,
+    ) async {
+      final val = RxS<String>();
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Obx(
+            () => val.on(
+              idle: () => const Text('Idle...'),
+              loading: () => const Text('Loading...'),
+              loaded: (data) => const Text('Has data'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Idle...'), findsOneWidget);
     });
 
     testWidgets('on() renders error state and reactively updates on error change', (

@@ -5,13 +5,13 @@ import '../state_manager/obx.dart';
 /// ─────────────────────────────────────────────────────────────────────────────
 /// RxDataStatus
 /// ─────────────────────────────────────────────────────────────────────────────
-/// Represents the three fundamental states of an asynchronous data value.
-enum RxDataStatus { loading, loaded, error }
+/// Represents the four fundamental states of an asynchronous data value.
+enum RxDataStatus { idle, loading, loaded, error }
 
 /// ─────────────────────────────────────────────────────────────────────────────
 /// RxS\<T\>
 /// ─────────────────────────────────────────────────────────────────────────────
-/// An [Rxn] (nullable reactive value) that carries its own loading/loaded/error
+/// An [Rxn] (nullable reactive value) that carries its own idle/loading/loaded/error
 /// status alongside the reactive data, so consumers never have to maintain a
 /// separate status observable.
 ///
@@ -40,6 +40,7 @@ enum RxDataStatus { loading, loaded, error }
 ///
 /// // ── UI binding ──────────────────────────────────────────────────
 /// user.on(
+///   idle: () => const Text('Idle'),
 ///   loading: () => const CircularProgressIndicator(),
 ///   loaded:  (data) => Text('Hello, ${data?.name ?? "Guest"}'),
 ///   error:   (msg) => Text('Error: $msg'),
@@ -50,7 +51,7 @@ class RxS<T> extends Rxn<T> {
 
   /// Internal status observable — read via [status] getter, mutated via
   /// the [status] setter for clean DX.
-  final Rx<RxDataStatus> _status = Rx<RxDataStatus>(RxDataStatus.loading);
+  final Rx<RxDataStatus> _status = Rx<RxDataStatus>(RxDataStatus.idle);
 
   /// The current status of this reactive value.
   RxDataStatus get status => _status.value;
@@ -73,9 +74,26 @@ class RxS<T> extends Rxn<T> {
 
   /// Creates an [RxS] optionally initialized with [initial] value.
   ///
-  /// The initial status is [RxDataStatus.loading] by default so that the
-  /// UI shows a loader until the first data mutation.
+  /// The initial status is [RxDataStatus.idle] by default so that the
+  /// UI shows an idle state until the first data mutation or status change.
   RxS([super.initial]);
+
+  // ─── Status Mutator Helpers ────────────────────────────────────────────────
+
+  /// Transitions the status to [RxDataStatus.idle].
+  void setIdle() => status = RxDataStatus.idle;
+
+  /// Transitions the status to [RxDataStatus.loading].
+  void setLoading() => status = RxDataStatus.loading;
+
+  /// Transitions the status to [RxDataStatus.loaded].
+  void setLoaded() => status = RxDataStatus.loaded;
+
+  /// Sets the error message and transitions the status to [RxDataStatus.error].
+  void setError(String errorMsg) {
+    error = errorMsg;
+    status = RxDataStatus.error;
+  }
 
   // ─── Internal: auto-sync status after mutation ─────────────────────────────
 
@@ -108,7 +126,7 @@ class RxS<T> extends Rxn<T> {
 // ─── Extension: .ops — T → RxS<T> ────────────────────────────────────────────
 
 extension RxSOpsExt<T> on T {
-  /// Converts a plain value into an [RxS] with initial [RxDataStatus.loading].
+  /// Converts a plain value into an [RxS] with initial [RxDataStatus.idle].
   ///
   /// ```dart
   /// final user = User(name: 'Alice').ops;
@@ -128,17 +146,21 @@ extension RxSOnExt<T> on RxS<T> {
   ///
   /// ```dart
   /// Obx(() => user.on(
+  ///   idle: () => const Center(child: Text('Idle')),
   ///   loading: () => const Center(child: CircularProgressIndicator()),
   ///   loaded:  (data) => Text('Hello, ${data?.name ?? "Guest"}'),
   ///   error:   (msg) => Center(child: Text('Oops: $msg')),
   /// ));
   /// ```
   Widget on({
+    Widget Function()? idle,
     required Widget Function() loading,
     required Widget Function(T? data) loaded,
     Widget Function(String error)? error,
   }) {
     switch (_status.value) {
+      case RxDataStatus.idle:
+        return idle != null ? idle() : const SizedBox.shrink();
       case RxDataStatus.loading:
         return loading();
       case RxDataStatus.loaded:

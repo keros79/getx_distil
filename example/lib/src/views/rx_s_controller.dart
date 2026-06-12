@@ -4,7 +4,9 @@ import 'package:getx_distil/get.dart';
 class RxSController extends GetxController {
   final user = RxS<User?>(null);
 
-  void loadUser() {
+  Future<void> loadUser() async {
+    user.setLoading();
+    await Future.delayed(const Duration(seconds: 3));
     user.value = User(
       name: '김철수',
       email: 'chulsoo@example.com',
@@ -30,13 +32,12 @@ class RxSController extends GetxController {
   }
 
   void simulateError() {
-    user.error = '네트워크 연결에 실패했습니다';
-    user.status = RxDataStatus.error;
+    user.setError('네트워크 연결에 실패했습니다');
   }
 
   void reset() {
     user.value = null;
-    user.status = RxDataStatus.loading;
+    user.setIdle();
     user.error = null;
   }
 }

@@ -93,6 +93,16 @@ class RxSPage extends GetView<RxSController> {
             Expanded(
               child: Obx(
                 () => user.on(
+                  idle: () => _buildStatusMessage(
+                    context,
+                    icon: Icons.pause_circle_outline,
+                    label: 'Idle',
+                    color: Colors.blueGrey,
+                    child: const Text(
+                      'Tap "Load User" to start.',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
                   loading: () => _buildStatusMessage(
                     context,
                     icon: Icons.hourglass_empty,

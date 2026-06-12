@@ -4,7 +4,9 @@ import 'package:getx_distil/get.dart';
 class RxSListController extends GetxController {
   final list = RxSList<String>();
 
-  void loadData() {
+  Future<void> loadData() async {
+    list.setLoading();
+    await Future.delayed(const Duration(seconds: 3));
     list.assignAll(['Apple', 'Banana', 'Cherry']);
   }
 

@@ -85,6 +85,10 @@ class RxSListPagingPage extends GetView<RxSListPagingController> {
                 const Spacer(),
                 Obx(
                   () => list.on(
+                    idle: () => const Chip(
+                      avatar: Icon(Icons.pause, size: 16),
+                      label: Text('Idle'),
+                    ),
                     loading: () => const Chip(
                       avatar: Icon(Icons.hourglass_empty, size: 16),
                       label: Text('Loading'),
@@ -121,6 +125,9 @@ class RxSListPagingPage extends GetView<RxSListPagingController> {
             Expanded(
               child: Obx(
                 () => list.on(
+                  idle: () => const Center(
+                    child: Text('Idle. Tap "First Page" to begin.'),
+                  ),
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
                   loaded: (data) => ListView.separated(
@@ -131,11 +138,20 @@ class RxSListPagingPage extends GetView<RxSListPagingController> {
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           child: Center(
-                            child: FilledButton.tonalIcon(
-                              onPressed: controller.loadNextPage,
-                              icon: const Icon(Icons.expand_more),
-                              label: const Text('Load More'),
-                            ),
+                            child: Obx(() {
+                              if (controller.isNextPageLoading.value) {
+                                return const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                                );
+                              }
+                              return FilledButton.tonalIcon(
+                                onPressed: controller.loadNextPage,
+                                icon: const Icon(Icons.expand_more),
+                                label: const Text('Load More'),
+                              );
+                            }),
                           ),
                         );
                       }
