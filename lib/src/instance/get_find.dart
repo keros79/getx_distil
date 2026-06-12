@@ -25,25 +25,7 @@ class Get {
   static Locale? get locale => _locale.value;
   static set locale(Locale? val) => _locale.value = val;
 
-  static void updateLocale(BuildContext context, Locale val) {
-    locale = val;
-    try {
-      dynamic inheritedGoRouter;
-      context.visitAncestorElements((element) {
-        if (element.widget.runtimeType.toString() == 'InheritedGoRouter') {
-          inheritedGoRouter = element.widget;
-          return false;
-        }
-        return true;
-      });
-
-      if (inheritedGoRouter != null) {
-        inheritedGoRouter.goRouter.refresh();
-      }
-    } catch (_) {
-      // Fallback
-    }
-  }
+  static Listenable get localeListenable => _locale;
 
   static final Rxn<Locale> _fallbackLocale = Rxn<Locale>();
   static Locale? get fallbackLocale => _fallbackLocale.value;

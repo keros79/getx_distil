@@ -4,6 +4,16 @@ import '../../get.dart';
 class GetViewElement<T> extends StatelessElement {
   GetViewElement(GetView<T> super.widget);
 
+  void _onLocaleChanged() {
+    if (mounted) markNeedsBuild();
+  }
+
+  @override
+  void mount(Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
+    Get.localeListenable.addListener(_onLocaleChanged);
+  }
+
   @override
   Widget build() {
     GetView.contexts[widget] = this;
@@ -20,6 +30,7 @@ class GetViewElement<T> extends StatelessElement {
 
   @override
   void unmount() {
+    Get.localeListenable.removeListener(_onLocaleChanged);
     GetView.contexts[widget] = null;
     super.unmount();
   }
