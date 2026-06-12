@@ -110,7 +110,7 @@ class RxSList<T> extends RxList<T> {
   ///
   /// The initial status is [RxListStatus.loading] by default so that the
   /// UI shows a loader until the first data mutation.
-  RxSList([List<T>? initial]) : super(initial);
+  RxSList([super.initial]);
 
   // ─── Internal: auto-sync status after mutation ─────────────────────────────
 
