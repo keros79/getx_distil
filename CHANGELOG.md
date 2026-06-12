@@ -1,3 +1,7 @@
+## 1.2.1
+
+* **Correction of Localization API Usage in Documentation**: Updated runtime localization examples in both `README.md` and `README.ko.md` to use the reactive `Get.locale` setter property instead of the deprecated `Get.updateLocale` method.
+
 ## 1.2.0
 
 * **Localization Documentation Refinement**: Updated localization examples in both `README.md` and `README.ko.md` to cover two distinct use cases:
