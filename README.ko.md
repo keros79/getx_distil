@@ -111,11 +111,11 @@ Obx(() => Text('${controller.count.value}'));
 ---
 
 ### 2. 📋 상태 인지 반응형 리스트 (`RxSList`)
-[`RxList`]를 확장하여 **loading/loaded/empty/error** 상태를 자체 관리하는 리스트입니다. 별도의 `isLoading`/`errorMessage` 옵저버블이 필요 없습니다 — 리스트 스스로 상태를 추적합니다.
+[`RxList`]를 확장하여 **idle/loading/loaded/empty/error** 상태를 자체 관리하는 리스트입니다. 별도의 `isLoading`/`errorMessage` 옵저버블이 필요 없습니다 — 리스트 스스로 상태를 추적합니다.
 
 ```dart
 final items = <String>[].ops; // List<T> → RxSList<T> via .ops extension
-print(items.status); // RxListStatus.loading (초기값)
+print(items.status); // RxListStatus.idle (초기값)
 ```
 
 #### 상태 자동 동기화
@@ -131,8 +131,7 @@ items.clear();                        // status → empty
 `error` 상태는 **절대 자동으로 설정되지 않습니다** — 에러 발생 시 수동으로 할당합니다. 기존 데이터가 보존된 상태에서 의도치 않게 상태가 덮어쓰여지는 것을 방지합니다:
 
 ```dart
-items.error = 'Network failure';
-items.status = RxListStatus.error; // 데이터는 그대로 보존됩니다
+items.setError('Network failure'); // 에러 설정 및 status를 RxListStatus.error로 변경 (데이터는 그대로 보존됩니다)
 ```
 
 #### UI 바인딩 — `Obx(() => list.on(...))` 사용
@@ -141,6 +140,7 @@ items.status = RxListStatus.error; // 데이터는 그대로 보존됩니다
 
 ```dart
 Obx(() => items.on(
+  idle:    () => const Center(child: Text('대기 상태')),
   loading: () => const Center(child: CircularProgressIndicator()),
   loaded:  (data) => ListView.builder(
     itemCount: data.length,
@@ -179,11 +179,11 @@ Obx(() => Text(paged.hasMore ? 'More available' : 'All loaded'));
 
 ### 3. 📦 상태 인지 단일 값 (`RxS`)
 
-[`Rxn`]을 확장하여 **loading/loaded/error** 상태를 자체 관리하는 단일 값 반응형 객체입니다. 비동기 라이프사이클을 거치는 User 프로필이나 설정 같은 단일 객체 상태에 적합합니다.
+[`Rxn`]을 확장하여 **idle/loading/loaded/error** 상태를 자체 관리하는 단일 값 반응형 객체입니다. 비동기 라이프사이클을 거치는 User 프로필이나 설정 같은 단일 객체 상태에 적합합니다.
 
 ```dart
 final user = RxS<User?>(null); // T?로 nullable 지원
-print(user.status); // RxDataStatus.loading (초기값)
+print(user.status); // RxDataStatus.idle (초기값)
 ```
 
 #### 상태 자동 동기화
@@ -199,8 +199,7 @@ user.value = null;                    // status stays loaded (null도 유효한 
 `error` 상태는 **절대 자동으로 설정되지 않습니다** — 에러 발생 시 수동으로 할당합니다. 기존 값이 보존된 상태에서 의도치 않게 상태가 덮어쓰여지는 것을 방지합니다:
 
 ```dart
-user.error = '네트워크 연결에 실패했습니다';
-user.status = RxDataStatus.error; // 현재 user 데이터는 그대로 보존됩니다
+user.setError('네트워크 연결에 실패했습니다'); // 에러 설정 및 status를 RxDataStatus.error로 변경 (현재 user 데이터는 그대로 보존됩니다)
 ```
 
 #### UI 바인딩 — `Obx(() => value.on(...))` 사용
@@ -209,6 +208,7 @@ user.status = RxDataStatus.error; // 현재 user 데이터는 그대로 보존�
 
 ```dart
 Obx(() => user.on(
+  idle:    () => const Center(child: Text('대기 상태')),
   loading: () => const Center(child: CircularProgressIndicator()),
   loaded:  (data) => Text('안녕하세요, ${data?.name ?? "게스트"}'),
   error:   (msg) => Center(child: Text('오류: $msg')),

@@ -113,11 +113,11 @@ Obx(() => Text('${controller.count.value}'));
 ---
 
 ### 2. 📋 Status-Aware Reactive List (`RxSList`)
-An extended [`RxList`] that carries its own **loading/loaded/empty/error** status, automatically synchronized with list mutations. No more separate `isLoading`/`errorMessage` observables — the list manages itself.
+An extended [`RxList`] that carries its own **idle/loading/loaded/empty/error** status, automatically synchronized with list mutations. No more separate `isLoading`/`errorMessage` observables — the list manages itself.
 
 ```dart
 final items = <String>[].ops; // List<T> → RxSList<T> via .ops extension
-print(items.status); // RxListStatus.loading (initial)
+print(items.status); // RxListStatus.idle (initial)
 ```
 
 #### Status Auto-Sync
@@ -133,8 +133,7 @@ items.clear();                        // status → empty
 The `error` state is **never** set automatically — assign it manually when an error occurs. This prevents accidental status overwrite when the list still holds valid data:
 
 ```dart
-items.error = 'Network failure';
-items.status = RxListStatus.error; // data is preserved underneath
+items.setError('Network failure'); // sets error message and status to RxListStatus.error (data is preserved underneath)
 ```
 
 #### UI Binding — use `Obx(() => list.on(...))`
@@ -143,6 +142,7 @@ Wrap `.on()` with `Obx` for reactive binding — the same DX pattern as `Obx(() 
 
 ```dart
 Obx(() => items.on(
+  idle:    () => const Center(child: Text('Idle')),
   loading: () => const Center(child: CircularProgressIndicator()),
   loaded:  (data) => ListView.builder(
     itemCount: data.length,
@@ -181,11 +181,11 @@ Obx(() => Text(paged.hasMore ? 'More available' : 'All loaded'));
 
 ### 3. 📦 Status-Aware Single Value (`RxS`)
 
-An extended [`Rxn`] that carries its own **loading/loaded/error** status, automatically synchronized with value mutations. Perfect for single-object state like a User profile or configuration that goes through an async lifecycle.
+An extended [`Rxn`] that carries its own **idle/loading/loaded/error** status, automatically synchronized with value mutations. Perfect for single-object state like a User profile or configuration that goes through an async lifecycle.
 
 ```dart
 final user = RxS<User?>(null); // T? for nullable support
-print(user.status); // RxDataStatus.loading (initial)
+print(user.status); // RxDataStatus.idle (initial)
 ```
 
 #### Status Auto-Sync
@@ -201,8 +201,7 @@ user.value = null; // status stays loaded (null is a valid value)
 The `error` state is **never** set automatically — assign it manually when an error occurs. This preserves the current value underneath:
 
 ```dart
-user.error = 'Network failure';
-user.status = RxDataStatus.error; // current user data is preserved
+user.setError('Network failure'); // sets error message and status to RxDataStatus.error (current user data is preserved)
 ```
 
 #### UI Binding — use `Obx(() => value.on(...))`
@@ -211,6 +210,7 @@ Wrap `.on()` with `Obx` for reactive binding — the same DX pattern as `Obx(() 
 
 ```dart
 Obx(() => user.on(
+  idle:    () => const Center(child: Text('Idle')),
   loading: () => const Center(child: CircularProgressIndicator()),
   loaded:  (data) => Text('Hello, ${data?.name ?? "Guest"}'),
   error:   (msg) => Center(child: Text('Oops: $msg')),
