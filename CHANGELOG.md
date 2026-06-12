@@ -1,3 +1,10 @@
+## 1.2.0
+
+* **Localization Documentation Refinement**: Updated localization examples in both `README.md` and `README.ko.md` to cover two distinct use cases:
+  - `GetView` pages: `build()` is auto-wrapped by `GetViewElement` with a `Notifier` tracking scope, so `.tr` calls directly inside `build()` automatically subscribe to `Get.locale(Rx)` without needing `Obx`.
+  - `StatelessWidget`/`StatefulWidget` pages: No tracking scope exists, so the entire `Scaffold` must be wrapped with a single `Obx` to make all `.tr` calls reactive.
+* **Documentation Clarity**: Added a `[!TIP]` admonition recommending a single top-level `Obx` wrapping `Scaffold` for concise StatelessWidget localization.
+
 ## 1.1.4
 
 * **Introduced `Get.updateLocale`**: Added a new static method `Get.updateLocale(BuildContext context, Locale val)` that dynamically updates `Get.locale` and safely refreshes the active `GoRouter` configuration (without a compile-time dependency on `go_router`) to immediately apply translations on the current screen without resetting navigation or widget states.
