@@ -156,7 +156,7 @@ extension RxSOnExt<T> on RxS<T> {
     Widget Function()? idle,
     required Widget Function() loading,
     required Widget Function(T? data) loaded,
-    Widget Function(String error)? error,
+    Widget Function(String? error)? error,
   }) {
     switch (_status.value) {
       case RxDataStatus.idle:
@@ -173,7 +173,7 @@ extension RxSOnExt<T> on RxS<T> {
         });
       case RxDataStatus.error:
         return error != null
-            ? Obx(() => error(this.error ?? 'Unknown error'))
+            ? Obx(() => error(this.error))
             : const SizedBox.shrink();
     }
   }

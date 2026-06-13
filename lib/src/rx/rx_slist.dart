@@ -233,7 +233,7 @@ extension RxSListOnExt<T> on RxSList<T> {
     required Widget Function() loading,
     required Widget Function(List<T> data) loaded,
     Widget Function()? empty,
-    Widget Function(String error)? error,
+    Widget Function(String? error)? error,
   }) {
     switch (_status.value) {
       case RxListStatus.idle:
@@ -252,7 +252,7 @@ extension RxSListOnExt<T> on RxSList<T> {
         return empty != null ? empty() : const SizedBox.shrink();
       case RxListStatus.error:
         return error != null
-            ? Obx(() => error(this.error ?? 'Unknown error'))
+            ? Obx(() => error(this.error))
             : const SizedBox.shrink();
     }
   }

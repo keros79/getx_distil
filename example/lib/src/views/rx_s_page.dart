@@ -134,7 +134,7 @@ class RxSPage extends GetView<RxSController> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          msg,
+                          msg ?? 'Unknown error',
                           style: const TextStyle(fontSize: 16),
                           textAlign: TextAlign.center,
                         ),

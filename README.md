@@ -149,7 +149,7 @@ Obx(() => items.on(
     itemBuilder: (_, i) => Text(data[i]),
   ),
   empty:   () => const Center(child: Text('No items')),
-  error:   (msg) => Center(child: Text('Oops: $msg')),
+  error:   (msg) => Center(child: Text('Oops: ${msg ?? 'Unknown error'}')),
 ));
 ```
 
@@ -213,7 +213,7 @@ Obx(() => user.on(
   idle:    () => const Center(child: Text('Idle')),
   loading: () => const Center(child: CircularProgressIndicator()),
   loaded:  (data) => Text('Hello, ${data?.name ?? "Guest"}'),
-  error:   (msg) => Center(child: Text('Oops: $msg')),
+  error:   (msg) => Center(child: Text('Oops: ${msg ?? 'Unknown error'}')),
 ));
 ```
 

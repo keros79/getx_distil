@@ -112,7 +112,7 @@ class RxSListPagingPage extends GetView<RxSListPagingController> {
                         size: 16,
                         color: Colors.red,
                       ),
-                      label: Text(msg),
+                      label: Text(msg ?? 'Unknown error'),
                       backgroundColor: Colors.red.shade50,
                     ),
                   ),
@@ -143,7 +143,9 @@ class RxSListPagingPage extends GetView<RxSListPagingController> {
                                 return const SizedBox(
                                   width: 24,
                                   height: 24,
-                                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                  ),
                                 );
                               }
                               return FilledButton.tonalIcon(
@@ -183,7 +185,10 @@ class RxSListPagingPage extends GetView<RxSListPagingController> {
                           color: Colors.red,
                         ),
                         const SizedBox(height: 16),
-                        Text(msg, style: theme.textTheme.titleMedium),
+                        Text(
+                          msg ?? 'Unknown error',
+                          style: theme.textTheme.titleMedium,
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           'Existing data is preserved.',
