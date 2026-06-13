@@ -1,3 +1,9 @@
+## 1.3.0
+
+* **Idle State Support for RxS & RxSList**: Introduced a new `idle` status in both `RxS` and `RxSList`, representing the initial state before any loading or data operation begins. This enables more precise UI branching for lazy-initialized or pre-fetch scenarios.
+* **Nullable Error Message Support**: Updated `RxS.setError()` and `RxSList.setError()` to accept nullable error messages, providing greater flexibility when error details are optional.
+* **Null Error Message Handling**: Fixed widget builders in both `RxS` and `RxSList` to gracefully handle null error messages without crashing.
+
 ## 1.2.1
 
 * **Correction of Localization API Usage in Documentation**: Updated runtime localization examples in both `README.md` and `README.ko.md` to use the reactive `Get.locale` setter property instead of the deprecated `Get.updateLocale` method.
