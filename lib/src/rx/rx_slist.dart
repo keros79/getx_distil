@@ -128,7 +128,7 @@ class RxSList<T> extends RxList<T> {
   void setEmpty() => status = RxListStatus.empty;
 
   /// Sets the error message and transitions the status to [RxListStatus.error].
-  void setError(String errorMsg) {
+  void setError(String? errorMsg) {
     error = errorMsg;
     status = RxListStatus.error;
   }

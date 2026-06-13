@@ -90,7 +90,7 @@ class RxS<T> extends Rxn<T> {
   void setLoaded() => status = RxDataStatus.loaded;
 
   /// Sets the error message and transitions the status to [RxDataStatus.error].
-  void setError(String errorMsg) {
+  void setError(String? errorMsg) {
     error = errorMsg;
     status = RxDataStatus.error;
   }

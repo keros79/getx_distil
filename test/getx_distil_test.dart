@@ -1192,6 +1192,10 @@ void main() {
       expect(list.status, RxListStatus.error);
       expect(list.error, 'custom error');
 
+      list.setError(null);
+      expect(list.status, RxListStatus.error);
+      expect(list.error, isNull);
+
       list.setIdle();
       expect(list.status, RxListStatus.idle);
     });
@@ -1624,6 +1628,10 @@ void main() {
       val.setError('custom error');
       expect(val.status, RxDataStatus.error);
       expect(val.error, 'custom error');
+
+      val.setError(null);
+      expect(val.status, RxDataStatus.error);
+      expect(val.error, isNull);
 
       val.setIdle();
       expect(val.status, RxDataStatus.idle);
