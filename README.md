@@ -29,9 +29,9 @@ However, as the Flutter ecosystem matured toward declarative routing (like `GoRo
 * 📋 **Batched Loop Mutations (`RxList`)**
   Instead of triggering expensive UI rebuilds on every single mutation inside a loop, `RxList` aggregates changes and schedules a single microtask UI refresh.
 * 📋 **Status-Aware Reactive List (`RxSList`)**
-  An [`RxList`] subclass that carries its own `loading`/`loaded`/`empty`/`error` status, automatically synchronized with every mutation. No separate `isLoading`/`errorMessage` observables needed.
+  An [`RxList`] subclass that carries its own `idle`/`loading`/`loaded`/`empty`/`error` status, automatically synchronized with every mutation. No separate `isLoading`/`errorMessage` observables needed.
 * 📦 **Status-Aware Single Value (`RxS`)**
-  An [`Rxn`] subclass that carries its own `loading`/`loaded`/`error` status for nullable single-object state. Automatically transitions to `loaded` on value set, with sticky error state.
+  An [`Rxn`] subclass that carries its own `idle`/`loading`/`loaded`/`error` status for nullable single-object state. Automatically transitions to `loaded` on value set, with sticky error state.
 * 🔍 **High-Visibility DI Debugging**
   When `Get.find` fails, it no longer throws a cryptic message. It prints a comprehensive debug layout showing the requested context name, the exact parent ancestor widget hierarchy path, and active services in memory.
 * ⚡ **High-Performance Fast-Path Tracking (`Notifier.isTracking`)**

@@ -29,9 +29,9 @@ Flutter를 위한 **고성능 마이크로 상태 관리 및 트리 스코프 �
 * 📋 **루프 대량 변경 최적화 (`RxList`)**
   루프 반복문 내에서 대량의 요소 변경이 일어날 때 매번 값 변경 이벤트를 발생시켜 화면을 무수히 리빌드하는 대신, 변경점들을 묶어 단 1회의 마이크로태스크 UI 리프레시만 예약 및 수행합니다.
 * 📋 **상태 인지 반응형 리스트 (`RxSList`)**
-  [`RxList`]를 확장하여 `loading`/`loaded`/`empty`/`error` 상태를 자체 관리합니다. 모든 변경 연산이 자동으로 상태를 동기화하므로 별도의 `isLoading`/`errorMessage` 옵저버블이 필요 없습니다.
+  [`RxList`]를 확장하여 `idle`/`loading`/`loaded`/`empty`/`error` 상태를 자체 관리합니다. 모든 변경 연산이 자동으로 상태를 동기화하므로 별도의 `isLoading`/`errorMessage` 옵저버블이 필요 없습니다.
 * 📦 **상태 인지 단일 값 (`RxS`)**
-  [`Rxn`]을 확장하여 `loading`/`loaded`/`error` 상태를 자체 관리합니다. nullable 단일 객체 상태에 적합하며, 값 설정 시 자동으로 `loaded`로 전환되고 error는 sticky하게 유지됩니다.
+  [`Rxn`]을 확장하여 `idle`/`loading`/`loaded`/`error` 상태를 자체 관리합니다. nullable 단일 객체 상태에 적합하며, 값 설정 시 자동으로 `loaded`로 전환되고 error는 sticky하게 유지됩니다.
 * 🔍 **직관적인 DI 디버깅 가이드**
   `Get.find`가 의존성을 찾지 못해 실패할 때 단순한 에러 스택 대신, 요청을 호출한 위젯명, 정확한 상위 조상 위젯 계층 구조 경로(Tree Path), 그리고 현재 메모리에 올라와 있는 전역/불멸 서비스 목록을 한눈에 표시해 줍니다.
 * ⚡ **고속 트랙(Fast-Path) 추적 플래그 (`Notifier.isTracking`)**
