@@ -1,3 +1,8 @@
+## 1.3.1
+
+* **`GetMaterialApp` Root Service Auto-Initialization**: Global services registered via `bindings` in `GetMaterialApp` are now automatically initialized at app startup. Previously, services such as `GetxService` subclasses required a manual `builder` callback workaround (`Get.find<T>(context)`) to trigger initialization; this is no longer necessary.
+* **`BindingWidget` Instant Initialization Support**: `BindingWidget` now supports immediate binding initialization at mount time, enabling parent-scoped services to be fully ready before any child widget builds.
+
 ## 1.3.0
 
 * **Idle State Support for RxS & RxSList**: Introduced a new `idle` status in both `RxS` and `RxSList`, representing the initial state before any loading or data operation begins. This enables more precise UI branching for lazy-initialized or pre-fetch scenarios.
