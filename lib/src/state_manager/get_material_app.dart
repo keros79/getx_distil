@@ -90,6 +90,7 @@ class GetMaterialApp extends StatelessWidget {
     if (bindings != null && bindings!.isNotEmpty) {
       app = BindingWidget(
         bindings: bindings!,
+        eager: true,
         child: app,
       );
     }

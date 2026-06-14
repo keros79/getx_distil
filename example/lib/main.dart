@@ -291,11 +291,6 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       routerConfig: router,
       bindings: [Bind<AppConfig>(() => AppConfig())],
-      builder: (context, child) {
-        // Initialize global dark-mode settings service
-        Get.find<AppConfig>(context);
-        return child!;
-      },
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

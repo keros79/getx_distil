@@ -18,11 +18,13 @@ class InheritedBinding extends InheritedWidget {
 class BindingWidget extends StatefulWidget {
   final List<Bind<dynamic>> bindings;
   final Widget child;
+  final bool eager;
 
   const BindingWidget({
     super.key,
     required this.bindings,
     required this.child,
+    this.eager = false,
   });
 
   @override
@@ -40,6 +42,29 @@ class BindingWidgetState extends State<BindingWidget> {
   void initState() {
     super.initState();
     _activeStates.add(this);
+    if (widget.eager) {
+      _initializeEagerBindings();
+    }
+  }
+
+  void _initializeEagerBindings() {
+    for (final bind in widget.bindings) {
+      final type = bind.type;
+      if (_immortalInstances.containsKey(type) || _instances.containsKey(type)) {
+        continue;
+      }
+      final instance = bind.factory();
+      if (instance is GetxService) {
+        _immortalInstances[type] = instance;
+      } else {
+        _instances[type] = instance;
+        _registerWeak(type, instance);
+      }
+
+      if (instance is GetLifeCycleMixin) {
+        instance.onStart();
+      }
+    }
   }
 
   static T? getWeak<T>() {
