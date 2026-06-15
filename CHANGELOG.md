@@ -1,3 +1,7 @@
+## 1.3.2
+
+* **TDD Documentation & Example**: Added comprehensive TDD (Test-Driven Development) documentation in both `README.md` and `README.ko.md`, covering mock service injection patterns with `GetxService` and `BindingWidget`. Includes a full example app (`tdd_test_page.dart`, `tdd_test_controller.dart`) and a corresponding widget test suite (`tdd_example_test.dart`) demonstrating how to write testable controllers with injectable mock services.
+
 ## 1.3.1
 
 * **`GetMaterialApp` Root Service Auto-Initialization**: Global services registered via `bindings` in `GetMaterialApp` are now automatically initialized at app startup. Previously, services such as `GetxService` subclasses required a manual `builder` callback workaround (`Get.find<T>(context)`) to trigger initialization; this is no longer necessary.
