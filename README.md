@@ -516,6 +516,87 @@ Get.locale = const Locale('en', 'US');
 
 ---
 
+## 🧪 TDD & Testability
+
+`getx_distil`'s `BindingWidget` shines when it comes to **TDD (Test-Driven Development)** and unit/widget testing.
+
+Traditional global singleton DI systems run into state pollution and test leakage when executing multiple test cases concurrently. Since `BindingWidget` provides a **strictly tree-scoped, isolated DI lifecycle**, you can write mock-driven widget and logic tests without polluting global namespaces or worrying about test order execution.
+
+### 💡 Why is this helpful for TDD?
+1. **Zero State Pollution**: Each test instantiates and disposes its own `BindingWidget`, ensuring no residues leak into other tests.
+2. **No Production Code Modifications**: You don't need to put `isTesting` flags or custom conditional injection logic inside your Controllers or Views. Just declare your mock bindings inside the test's `BindingWidget`.
+3. **Declarative Overrides**: Overriding real services with mock implementations is done in a clear, declarative list of `bindings`.
+
+### 🛠️ TDD Widget Test Example
+
+```dart
+// 1. Define your API Service interface
+abstract class RestApiService {
+  Future<String> fetchUserData();
+}
+
+// 2. Define a Mock API Service for testing
+class MockRestApiService implements RestApiService {
+  @override
+  Future<String> fetchUserData() async => "Mock Data";
+}
+
+// 3. Controller and View implementation
+class MyController extends GetxController {
+  final RestApiService api;
+  MyController(this.api);
+  
+  final data = "".obs;
+  
+  void load() async => data.value = await api.fetchUserData();
+}
+
+class MyPage extends GetView<MyController> {
+  const MyPage({super.key});
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Obx(() => Text(controller.data.value)),
+    );
+  }
+}
+
+// 4. Writing the Widget Test (TDD)
+void main() {
+  testWidgets('Overriding with Mock service updates UI correctly', (tester) async {
+    // Reset DI state before executing the test
+    Get.reset();
+    
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BindingWidget(
+          bindings: [
+            // Bind MockRestApiService instead of the real RealRestApiService!
+            Bind<RestApiService>(() => MockRestApiService()),
+            Bind<MyController>(() => MyController(Get.find<RestApiService>())),
+          ],
+          child: const MyPage(),
+        ),
+      ),
+    );
+    
+    // Trigger the load operation on controller
+    Get.find<MyController>().load();
+    await tester.pump();
+    
+    // Assert the mocked data is rendered correctly on screen
+    expect(find.text('Mock Data'), findsOneWidget);
+  });
+}
+```
+
+For a comprehensive, runnable TDD example, refer to [example/test/tdd_example_test.dart].
+
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License.
+

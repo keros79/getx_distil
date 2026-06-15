@@ -22,6 +22,10 @@ import 'src/views/rx_slist_paging_controller.dart';
 import 'src/views/rx_slist_paging_page.dart';
 import 'src/views/rx_s_controller.dart';
 import 'src/views/rx_s_page.dart';
+import 'src/services/rest_api_service.dart';
+import 'src/views/tdd_test_controller.dart';
+import 'src/views/tdd_test_page.dart';
+
 
 class AppTranslations extends Translations {
   @override
@@ -101,7 +105,18 @@ class AppTranslations extends Translations {
       'settings_dark_active': 'Dark Mode Active',
       'settings_light_active': 'Light Mode Active',
       'settings_language_title': 'Language',
+
+      // 7. TDD Test Page & Hub Link
+      'test_list_tdd_title': '9. Testable View (TDD Target)',
+      'test_list_tdd_desc': 'A target view designed for isolated TDD & widget testing using BindingWidget',
+      'tdd_test_appbar_title': 'Test Target View',
+      'tdd_test_status_label': 'API Service Response',
+      'tdd_test_badge': 'Scoped DI Override',
+      'tdd_test_refresh_btn': 'Refresh / Reload API',
+      'tdd_explain_title': 'Why this is useful for TDD',
+      'tdd_explain_desc': 'By wrapping the test page with BindingWidget, you can override any dependency (like RestApiService) with a Mock/Stub version inside the test file without modifying the production page or controller code.',
     },
+
     'ko_KR': {
       // 1. Hub Start Page
       'test_list_title': 'Distil 테스트 벤치',
@@ -172,7 +187,18 @@ class AppTranslations extends Translations {
       'settings_dark_active': '다크 모드 활성화됨',
       'settings_light_active': '라이트 모드 활성화됨',
       'settings_language_title': '애플리케이션 다국어',
+
+      // 7. TDD Test Page & Hub Link
+      'test_list_tdd_title': '9. 테스트 대상 뷰 (TDD 실습)',
+      'test_list_tdd_desc': '의존성 격리 및 TDD/위젯 테스트의 대상이 되는 예제 화면',
+      'tdd_test_appbar_title': '테스트 대상 뷰 (Test Target)',
+      'tdd_test_status_label': 'API 서비스 응답 결과',
+      'tdd_test_badge': '스코프 DI 오버라이드',
+      'tdd_test_refresh_btn': 'API 재호출 / 새로고침',
+      'tdd_explain_title': 'TDD 테스트에 이 방법이 유용하고 강력한 이유',
+      'tdd_explain_desc': '테스트 시점에 BindingWidget의 bindings에 실제 RealRestApiService 대신 MockRestApiService를 주입하면, 프로덕션 페이지 및 컨트롤러 코드를 전혀 수정하지 않고도 완벽하게 격리된 환경에서 화면과 비즈니스 로직을 빠르게 단위/위젯 테스트할 수 있습니다.',
     },
+
   };
 }
 
@@ -284,13 +310,30 @@ class MyApp extends StatelessWidget {
           path: '/settings',
           builder: (context, state) => const ExtraSettingsPage(),
         ),
+
+        // 10. TDD Test Page
+        GoRoute(
+          path: '/tdd-test',
+          builder: (context, state) => BindingWidget(
+            bindings: [
+              Bind<TddTestController>(
+                () => TddTestController(),
+              ),
+            ],
+            child: const TddTestPage(),
+          ),
+        ),
       ],
     );
+
 
     // Bootstrap root with GetMaterialApp
     return GetMaterialApp(
       routerConfig: router,
-      bindings: [Bind<AppConfig>(() => AppConfig())],
+      bindings: [
+        Bind<AppConfig>(() => AppConfig()),
+        Bind<RestApiService>(() => RealRestApiService()),
+      ],
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

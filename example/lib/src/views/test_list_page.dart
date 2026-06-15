@@ -121,7 +121,17 @@ class TestListPage extends GetView<TestListController> {
                 ),
                 const SizedBox(height: 16),
 
-                // 8. Extra Settings
+                // 8. TDD Test Demo
+                _buildMenuCard(
+                  context,
+                  title: 'test_list_tdd_title'.tr,
+                  subtitle: 'test_list_tdd_desc'.tr,
+                  route: '/tdd-test',
+                  borderColor: Colors.blueAccent.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 16),
+
+                // 9. Extra Settings
                 _buildMenuCard(
                   context,
                   title: 'test_list_settings_card_title'.tr,
@@ -130,6 +140,7 @@ class TestListPage extends GetView<TestListController> {
                   borderColor: Colors.pinkAccent.withValues(alpha: 0.4),
                 ),
               ],
+
             ),
           ),
         ),

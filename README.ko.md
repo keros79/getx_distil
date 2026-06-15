@@ -514,6 +514,89 @@ Get.locale = const Locale('en', 'US');
 
 ---
 
+## 🧪 TDD 및 테스트 용이성 (Testability)
+
+`getx_distil`의 `BindingWidget`은 **TDD(테스트 주도 개발)** 환경에서 강력한 진가를 발휘합니다. 
+
+기존 GetX나 전역 싱글톤 중심의 DI 라이브러리들은 테스트 환경에서 전역 메모리를 공유하기 때문에, 병렬 테스트나 다수의 테스트 케이스 실행 시 상태가 오염(State Pollution)되거나 의존성이 꼬이는 문제가 자주 발생했습니다.
+
+`BindingWidget`은 **완전한 위젯 트리 단위의 격리된 DI 스코프**를 보장하므로, 테스트 코드에서 실제 네트워크 통신을 유발하는 API 서비스 대신 모의 객체(Mock)를 동적으로 손쉽게 갈아 끼울 수 있습니다.
+
+### 💡 왜 TDD에 유용한가요?
+1. **전역 오염 없는 독립된 테스트**: 각 테스트마다 새로운 `BindingWidget` 인스턴스가 생성되고 소멸되므로, 전역 싱글톤의 잔재가 다른 테스트에 악영향을 주지 않습니다.
+2. **프로덕션 코드 변경 없음**: 테스트를 위해 View나 Controller 내부에 `isTesting` 같은 플래그 분기 코드를 추가할 필요가 없습니다. 오직 테스트 빌드 단계의 `bindings` 정의만 다르게 지정하면 됩니다.
+3. **간결한 선언적 오버라이드**: 모의 서비스(Mock)를 바인딩하고 컨트롤러에 전달하는 과정이 `BindingWidget` 선언부 내에서 직관적으로 표현됩니다.
+
+### 🛠️ TDD 위젯 테스트 작성 예시
+
+```dart
+// 1. API 서비스 인터페이스 정의
+abstract class RestApiService {
+  Future<String> fetchUserData();
+}
+
+// 2. 테스트용 Mock 서비스 정의
+class MockRestApiService implements RestApiService {
+  @override
+  Future<String> fetchUserData() async => "모의(Mock) 데이터";
+}
+
+// 3. Controller 및 View 정의
+class MyController extends GetxController {
+  final RestApiService api;
+  MyController(this.api);
+  
+  final data = "".obs;
+  
+  void load() async => data.value = await api.fetchUserData();
+}
+
+class MyPage extends GetView<MyController> {
+  const MyPage({super.key});
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Obx(() => Text(controller.data.value)),
+    );
+  }
+}
+
+// 4. 위젯 테스트 작성 (TDD)
+void main() {
+  testWidgets('Mock 서비스를 주입하여 UI가 올바르게 갱신되는지 테스트', (tester) async {
+    // 테스트 실행 전 DI 상태 리셋
+    Get.reset();
+    
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BindingWidget(
+          bindings: [
+            // 실제 RealRestApiService 대신 MockRestApiService 바인딩!
+            Bind<RestApiService>(() => MockRestApiService()),
+            Bind<MyController>(() => MyController(Get.find<RestApiService>())),
+          ],
+          child: const MyPage(),
+        ),
+      ),
+    );
+    
+    // 컨트롤러 데이터 로드 트리거
+    Get.find<MyController>().load();
+    await tester.pump();
+    
+    // UI에 모의 데이터가 정상적으로 표시되는지 단언(Assert)
+    expect(find.text('모의(Mock) 데이터'), findsOneWidget);
+  });
+}
+```
+
+더 구체적이고 바로 실행해 볼 수 있는 TDD 실습 코드는 [example/test/tdd_example_test.dart] 파일에서 확인하실 수 있습니다.
+
+
+---
+
 ## 📄 라이선스
 
 이 프로젝트는 MIT 라이선스에 따라 배포됩니다.
+
