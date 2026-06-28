@@ -596,6 +596,134 @@ For a comprehensive, runnable TDD example, refer to [example/test/tdd_example_te
 
 ---
 
+## 🚦 GoRouter & Reactive Route Guard
+
+Instead of providing a proprietary custom routing engine, `getx_distil` promotes using standard declarative routing packages like **`GoRouter`**. Since all `Rx` types in `getx_distil` (e.g. `RxBool`, `Rxn`, etc.) implement Flutter's native `ValueListenable` interface, they can be directly passed to `GoRouter`'s `refreshListenable` parameter to build reactive route guards (authentication and permission middlewares) in a declarative manner.
+
+### 1. Defining the Global AuthController
+
+The global controller tracks session load status (`isInitialized`) and user authentication status (`isLoggedIn`).
+
+```dart
+class AuthController extends GetxController {
+  final isLoggedIn = false.obs;
+  final isInitialized = false.obs; // Tracks if session verification is complete
+
+  @override
+  void onInit() {
+    super.onInit();
+    checkAuthSession(); // Check session asynchronously in the background (non-blocking)
+  }
+
+  Future<void> checkAuthSession() async {
+    await Future.delayed(const Duration(seconds: 1)); // Simulating secure storage lookup
+    isLoggedIn.value = true; // Set based on session existence
+    isInitialized.value = true; // Flip initialization flag
+  }
+}
+```
+
+### 2. main() & GoRouter Configuration (Proper Initialization Timing)
+
+Declaring `GoRouter` as a top-level global or static variable and calling `Get.find<AuthController>()` within its `refreshListenable` initializer can trigger dependency lookup failures if the router is evaluated before the dependency is registered.
+
+To prevent this, you should **register the global controller in `main()` using `Get.put(AuthController(), permanent: true)`** before starting the widget tree.
+
+```dart
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Register AuthController globally before the app and router start
+  Get.put(AuthController(), permanent: true);
+  
+  runApp(const MyApp());
+}
+
+// Top-level GoRouter declaration
+final auth = Get.find<AuthController>();
+
+final goRouter = GoRouter(
+  initialLocation: '/splash',
+  // Reactive Binding: whenever these Rx values change, GoRouter automatically re-evaluates redirect()
+  refreshListenable: Listenable.merge([
+    auth.isLoggedIn,
+    auth.isInitialized,
+  ]),
+  redirect: (context, state) {
+    // 1. Maintain splash screen until session loading is complete
+    if (!auth.isInitialized.value) {
+      return '/splash';
+    }
+
+    final loggedIn = auth.isLoggedIn.value;
+    final isGoingToLogin = state.matchedLocation == '/login';
+    final isGoingToSplash = state.matchedLocation == '/splash';
+
+    // Force redirect to login page if unauthenticated
+    if (!loggedIn) {
+      return '/login';
+    }
+
+    // Redirect to home if logged in but trying to access login/splash
+    if (loggedIn && (isGoingToLogin || isGoingToSplash)) {
+      return '/';
+    }
+
+    return null; // Proceed to destination route
+  },
+  routes: [
+    GoRoute(
+      path: '/splash',
+      builder: (context, state) => const SplashScreen(), // Loading/Splash widget
+    ),
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginPage(),
+    ),
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const BindingWidget(
+        bindings: [Bind(HomeController.new)],
+        child: HomePage(),
+      ),
+    ),
+  ],
+);
+```
+
+### ⚠️ Initialization Timing Caveat (Crash Example)
+
+The `bindings` parameter in `GetMaterialApp` registers dependencies during the widget build phase. If you declare `GoRouter` as a top-level global variable that references `Get.find`, while defining the controller under `GetMaterialApp(bindings: [...])`, **the router is evaluated before `GetMaterialApp` builds, resulting in a lookup failure crash**.
+
+```dart
+// ❌ Incorrect: GoRouter tries to find AuthController before it is registered
+final GoRouter router = GoRouter(
+  initialLocation: '/',
+  refreshListenable: Listenable.merge([
+    Get.find<AuthController>().isLoggedIn, // 🚨 CRASH: AuthController is not registered yet!
+  ]),
+  routes: [...],
+);
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GetMaterialApp(
+      routerConfig: router, // Evaluates 'router' statically during build config
+      bindings: [
+        Bind<AuthController>(() => AuthController()), // ◀ Too late! Registered after GoRouter is built
+      ],
+    );
+  }
+}
+```
+
+For global authentication services linked to route guards, you must register them in the entry point **`main()` using `Get.put(..., permanent: true)`** to guarantee that the dependency exists before the router starts.
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License.

@@ -596,6 +596,134 @@ void main() {
 
 ---
 
+## 🚦 GoRouter와 반응형 라우트 가드 (GoRouter & Reactive Route Guard)
+
+`getx_distil`은 자체적인 라우팅 시스템 대신 Flutter 표준 라우터 패키지인 **`GoRouter`**와의 완벽한 연동을 지향합니다. `getx_distil`의 모든 `Rx` 변수(예: `RxBool`, `Rxn` 등)는 Flutter의 표준 `ValueListenable`을 구현하고 있으므로, `GoRouter`의 `refreshListenable`에 직접 바인딩하여 반응형 라우트 가드(인증 및 권한 미들웨어)를 매우 선언적으로 구현할 수 있습니다.
+
+### 1. 전역 인증 컨트롤러 정의
+
+인증 세션 체크 여부(`isInitialized`)와 로그인 여부(`isLoggedIn`)를 추적하는 전역 컨트롤러입니다.
+
+```dart
+class AuthController extends GetxController {
+  final isLoggedIn = false.obs;
+  final isInitialized = false.obs; // 인증 검사가 완료되었는지 여부
+
+  @override
+  void onInit() {
+    super.onInit();
+    checkAuthSession(); // 백그라운드에서 비동기 체크 시작 (앱 구동을 블로킹하지 않음)
+  }
+
+  Future<void> checkAuthSession() async {
+    await Future.delayed(const Duration(seconds: 1)); // 로컬 저장소 토큰 체크 시뮬레이션
+    isLoggedIn.value = true; // 세션 존재 여부에 따라 세팅
+    isInitialized.value = true; // 검사 완료 플래그 활성화
+  }
+}
+```
+
+### 2. main() 및 GoRouter 설정 (올바른 초기화 타이밍)
+
+`GoRouter`를 파일 최상단 전역 변수나 클래스 static 변수로 선언하고 `refreshListenable`에서 `Get.find<AuthController>()`를 바로 호출하는 경우, 의존성 등록 시점과의 타이밍 이슈가 생길 수 있습니다. 
+
+이를 방지하기 위해 **앱 구동 시작점인 `main()`에서 `Get.put(AuthController(), permanent: true)`을 호출하여 최우선적으로 전역 주입**한 뒤, `GoRouter`를 연동해야 합니다.
+
+```dart
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 앱 구동 즉시 AuthController 등록 (onInit 비동기 체크가 백그라운드에서 시작됨)
+  Get.put(AuthController(), permanent: true);
+  
+  runApp(const MyApp());
+}
+
+// GoRouter 정의
+final auth = Get.find<AuthController>();
+
+final goRouter = GoRouter(
+  initialLocation: '/splash',
+  // 리액티브 바인딩: 아래 Rx 값들이 바뀔 때마다 GoRouter가 자동으로 redirect()를 재호출합니다.
+  refreshListenable: Listenable.merge([
+    auth.isLoggedIn,
+    auth.isInitialized,
+  ]),
+  redirect: (context, state) {
+    // 1. 아직 인증 데이터 로딩이 완료되지 않았다면 스플래시 화면 유지
+    if (!auth.isInitialized.value) {
+      return '/splash';
+    }
+
+    final loggedIn = auth.isLoggedIn.value;
+    final isGoingToLogin = state.matchedLocation == '/login';
+    final isGoingToSplash = state.matchedLocation == '/splash';
+
+    // 로그인 안 됨 -> 로그인 페이지로 강제 이동
+    if (!loggedIn) {
+      return '/login';
+    }
+
+    // 로그인 완료되었는데 스플래시나 로그인 페이지에 머물고 있다면 -> 홈으로 이동
+    if (loggedIn && (isGoingToLogin || isGoingToSplash)) {
+      return '/';
+    }
+
+    return null; // 리다이렉트 안 함 (목적지 그대로 이동)
+  },
+  routes: [
+    GoRoute(
+      path: '/splash',
+      builder: (context, state) => const SplashScreen(), // 로딩 스피너 등을 띄우는 스플래시 위젯
+    ),
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginPage(),
+    ),
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const BindingWidget(
+        bindings: [Bind(HomeController.new)],
+        child: HomePage(),
+      ),
+    ),
+  ],
+);
+```
+
+### ⚠️ 초기화 타이밍 주의 (크래시가 발생하는 예시)
+
+`GetMaterialApp`의 `bindings` 프로퍼티는 위젯이 빌드되는 단계에서 의존성을 주입합니다. 전역 변수로 `GoRouter`를 선언하고 `refreshListenable`에서 `Get.find`를 수행하면서, `GetMaterialApp(bindings: [...])`에 의존성을 정의하면 **의존성 등록 전에 GoRouter가 평가(Evaluation)되면서 탐색 실패 크래시가 발생**합니다.
+
+```dart
+// ❌ 잘못된 예시: 의존성이 주입되기 전에 GoRouter가 먼저 Get.find를 시도하여 크래시 발생
+final GoRouter router = GoRouter(
+  initialLocation: '/',
+  refreshListenable: Listenable.merge([
+    Get.find<AuthController>().isLoggedIn, // 🚨 여기서 에러 발생 (Not registered yet!)
+  ]),
+  routes: [...],
+);
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GetMaterialApp(
+      routerConfig: router, // GetMaterialApp 빌드 시 전역 변수 router를 참조함
+      bindings: [
+        Bind<AuthController>(() => AuthController()), // ◀ 아직 빌드 전이라 등록 안 됨!
+      ],
+    );
+  }
+}
+```
+
+따라서 인증 컨트롤러처럼 라우트 가드에 연동되어 앱 최극초기 구동 시점에 조회되어야 하는 글로벌 핵심 서비스는 **`main()` 함수 내에서 `Get.put(..., permanent: true)`을 호출해 가장 먼저 수동 등록**하는 것이 좋습니다.
+
+---
+
 ## 📄 라이선스
 
 이 프로젝트는 MIT 라이선스에 따라 배포됩니다.
