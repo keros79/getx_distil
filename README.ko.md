@@ -50,7 +50,7 @@ Flutter를 위한 **고성능 마이크로 상태 관리 및 트리 스코프 �
 > **[getx_distil vs GetX vs RiverPod3.0 비교](https://getxdistil.web.app/comparison)**
 
 > [!IMPORTANT]
-> **1.x → 2.0 마이그레이션**
+> **1.3.x → 1.4 마이그레이션**
 >
 > `Get.find`가 GetX의 `tag:` 스타일과 동일한 **네임드 파라미터**를 사용합니다:
 >

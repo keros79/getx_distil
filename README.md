@@ -50,7 +50,7 @@ However, as the Flutter ecosystem matured toward declarative routing (like `GoRo
 > **[getx_distil vs GetX vs RiverPod3.0 Comparison](https://getxdistil.web.app/comparison)**
 
 > [!IMPORTANT]
-> **Migrating from 1.x to 2.0**
+> **Migrating from 1.3.x to 1.4**
 >
 > `Get.find` now takes **named** parameters, matching GetX's `tag:` style:
 >
