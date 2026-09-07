@@ -22,7 +22,7 @@ class ObxError implements Exception {
   String toString() {
     return """
       [GetX] The improper use of Obx has been detected.
-      You must insert at least one observable variable (Rx) into the Obx build scope, 
+      You must insert at least one observable variable (Rx) into the Obx build scope,
       otherwise it has no dependencies to rebuild on change.
       """;
   }
@@ -43,6 +43,7 @@ class GetListenable<T> implements RxInterface<T> {
 
   StreamController<T>? _controller;
   final List<GetStateUpdate> _updaters = [];
+  List<StreamSubscription<T>>? _boundSubscriptions;
 
   StreamController<T> get subject {
     if (_controller == null) {
@@ -103,6 +104,47 @@ class GetListenable<T> implements RxInterface<T> {
     }
   }
 
+  /// Forwards [error] to the broadcast stream **only if** a consumer is
+  /// already attached (a Worker or a manual [listen]).
+  ///
+  /// Returns `true` when the error was delivered to at least one listener.
+  /// Callers use the return value to decide whether the error still has to
+  /// be surfaced elsewhere, so errors are never swallowed by an empty
+  /// broadcast stream.
+  @protected
+  bool notifyStreamError(Object error, [StackTrace? stackTrace]) {
+    final controller = _controller;
+    if (controller == null || !controller.hasListener) return false;
+    controller.addError(error, stackTrace);
+    return true;
+  }
+
+  /// Binds this observable to an external [stream].
+  ///
+  /// Every event emitted by [stream] is assigned to [value], triggering the
+  /// usual reactive notifications. The subscription is owned by this
+  /// observable and is cancelled automatically on [close]; call
+  /// [unbindStreams] to cancel earlier.
+  ///
+  /// ```dart
+  /// final ticks = 0.obs;
+  /// ticks.bindStream(Stream.periodic(const Duration(seconds: 1), (i) => i));
+  /// ```
+  void bindStream(Stream<T> stream) {
+    final subs = _boundSubscriptions ??= <StreamSubscription<T>>[];
+    subs.add(stream.listen((event) => value = event));
+  }
+
+  /// Cancels every subscription created by [bindStream].
+  void unbindStreams() {
+    final subs = _boundSubscriptions;
+    if (subs == null) return;
+    for (final sub in subs) {
+      sub.cancel();
+    }
+    subs.clear();
+  }
+
   void reportRead() {
     if (Notifier.isTracking) {
       Notifier.instance.read(this);
@@ -147,6 +189,7 @@ class GetListenable<T> implements RxInterface<T> {
 
   @override
   void close() {
+    unbindStreams();
     _controller?.close();
     _updaters.clear();
   }

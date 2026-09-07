@@ -71,7 +71,7 @@ class RxSList<T> extends RxList<T> {
 
   /// Internal status observable — read via [status] getter, mutated via
   /// the [status] setter for clean DX.
-  final Rx<RxListStatus> _status = Rx<RxListStatus>(RxListStatus.idle);
+  final Rx<RxListStatus> _status;
 
   /// The current status of this list.
   RxListStatus get status => _status.value;
@@ -109,9 +109,17 @@ class RxSList<T> extends RxList<T> {
 
   /// Creates an [RxSList] optionally pre-populated with [initial] elements.
   ///
-  /// The initial status is [RxListStatus.idle] by default so that the
-  /// UI shows an idle state until the first data mutation.
-  RxSList([super.initial]);
+  /// - No initial list, or an empty one → status starts as
+  ///   [RxListStatus.idle], so the UI shows an idle state until the first
+  ///   data mutation (an empty *initial* list has not been "loaded" yet).
+  /// - A non-empty [initial] list → status starts as [RxListStatus.loaded],
+  ///   because data is already present.
+  RxSList([super.initial])
+      : _status = Rx<RxListStatus>(
+          (initial == null || initial.isEmpty)
+              ? RxListStatus.idle
+              : RxListStatus.loaded,
+        );
 
   // ─── Status Mutator Helpers ────────────────────────────────────────────────
 
@@ -131,6 +139,78 @@ class RxSList<T> extends RxList<T> {
   void setError(String? errorMsg) {
     error = errorMsg;
     status = RxListStatus.error;
+  }
+
+  // ─── Async loading ─────────────────────────────────────────────────────────
+
+  /// Monotonic token so that only the **latest** [load] call may apply its
+  /// result; earlier, slower calls are discarded (last-write-wins).
+  int _loadToken = 0;
+
+  /// Runs [fetch] and drives [status] automatically:
+  ///
+  /// * `loading` while the future is pending (current items are preserved
+  ///   underneath),
+  /// * `loaded` / `empty` after [assignAll] with the fetched items,
+  /// * `error` (via [setError]) on failure — the previous items are kept.
+  ///
+  /// Errors are captured into the status instead of being thrown, so the
+  /// returned future always completes normally. They are additionally
+  /// forwarded to attached stream consumers (`ever(onError:)`, `listen`).
+  ///
+  /// When several [load] calls overlap, only the most recent one is allowed to
+  /// update the state; stale results are ignored.
+  ///
+  /// ```dart
+  /// final users = <User>[].ops;
+  /// await users.load(() => api.fetchUsers());   // idle → loading → loaded/empty
+  /// ```
+  Future<void> load(
+    Future<Iterable<T>> Function() fetch, {
+    String Function(Object error)? errorMessage,
+  }) async {
+    final token = ++_loadToken;
+    status = RxListStatus.loading;
+    try {
+      final result = await fetch();
+      if (token != _loadToken) return; // superseded by a newer load()
+      assignAll(result); // → loaded / empty
+    } catch (e, s) {
+      if (token != _loadToken) return;
+      notifyStreamError(e, s);
+      setError(errorMessage != null ? errorMessage(e) : e.toString());
+    }
+  }
+
+  /// Fetches the **next page** with [fetchNext] and appends it.
+  ///
+  /// Unlike [load], the status is **not** switched to `loading`, so the
+  /// already-visible items stay on screen while the page is fetched. After the
+  /// page arrives it is appended with [addAll] and [hasMore] is set to whether
+  /// the page contained any items. On failure [setError] is called and the
+  /// existing items are kept.
+  ///
+  /// Does nothing (completes immediately) when [hasMore] is already `false`.
+  ///
+  /// ```dart
+  /// await users.load(() => api.fetchUsers(page: 0));
+  /// ...
+  /// await users.loadMore(() => api.fetchUsers(page: ++page));
+  /// ```
+  Future<void> loadMore(
+    Future<Iterable<T>> Function() fetchNext, {
+    String Function(Object error)? errorMessage,
+  }) async {
+    if (!hasMore) return;
+    try {
+      final page = await fetchNext();
+      final items = page.toList(growable: false);
+      if (items.isNotEmpty) addAll(items);
+      hasMore = items.isNotEmpty;
+    } catch (e, s) {
+      notifyStreamError(e, s);
+      setError(errorMessage != null ? errorMessage(e) : e.toString());
+    }
   }
 
   // ─── Internal: auto-sync status after mutation ─────────────────────────────
@@ -197,11 +277,17 @@ class RxSList<T> extends RxList<T> {
 // ─── Extension: .ops — List<T> → RxSList<T> ───────────────────────────────────
 
 extension RxSListOpsExt<T> on List<T> {
-  /// Converts a plain [List] into an [RxSList] with initial [RxListStatus.idle].
+  /// Converts a plain [List] into an [RxSList].
+  ///
+  /// An empty list starts as [RxListStatus.idle]; a non-empty list starts as
+  /// [RxListStatus.loaded].
   ///
   /// ```dart
   /// final items = <String>[].ops;
   /// print(items.status); // RxListStatus.idle
+  ///
+  /// final seeded = ['a', 'b'].ops;
+  /// print(seeded.status); // RxListStatus.loaded
   /// ```
   RxSList<T> get ops => RxSList<T>(this);
 }

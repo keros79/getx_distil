@@ -222,14 +222,14 @@ void main() {
           bindings: [Bind<CounterController>(() => CounterController())],
           child: Builder(
             builder: (context1) {
-              final outer = Get.find<CounterController>(context1);
+              final outer = Get.find<CounterController>(context: context1);
               outer.count.value = 10;
 
               return BindingWidget(
                 bindings: [Bind<CounterController>(() => CounterController())],
                 child: Builder(
                   builder: (context2) {
-                    final inner = Get.find<CounterController>(context2);
+                    final inner = Get.find<CounterController>(context: context2);
                     // Inner should start at 0 (isolated from outer duplicate)
                     expect(inner.count.value, 0);
                     expect(outer.count.value, 10);
@@ -274,7 +274,7 @@ void main() {
               child: Builder(
                 builder: (context) {
                   // Resolve to initialize controller and trigger onInit/onReady
-                  final controller = Get.find<LifecycleController>(context);
+                  final controller = Get.find<LifecycleController>(context: context);
                   expect(controller.onInitCalled, true);
                   return const Text('Active Scope');
                 },
@@ -607,8 +607,8 @@ void main() {
                 child: Builder(
                   builder: (context) {
                     // Resolve them to instantiate
-                    Get.find<DatabaseService>(context);
-                    Get.find<RegularController>(context);
+                    Get.find<DatabaseService>(context: context);
+                    Get.find<RegularController>(context: context);
                     return const Text('Active DI Scope');
                   },
                 ),
@@ -690,7 +690,7 @@ void main() {
             child: Builder(
               builder: (context) {
                 expect(
-                  () => Get.find<CounterController>(context),
+                  () => Get.find<CounterController>(context: context),
                   throwsA(
                     isA<FlutterError>().having(
                       (e) => e.message,
@@ -769,8 +769,8 @@ void main() {
       controllerA.count.value = 10;
       controllerB.count.value = 20;
 
-      expect(Get.find<CounterController>(null, 'A').count.value, 10);
-      expect(Get.find<CounterController>(null, 'B').count.value, 20);
+      expect(Get.find<CounterController>(tag: 'A').count.value, 10);
+      expect(Get.find<CounterController>(tag: 'B').count.value, 20);
     });
 
     testWidgets(
@@ -791,7 +791,7 @@ void main() {
               child: Builder(
                 builder: (context) {
                   // With context: retrieves scoped controller (10)
-                  final resolvedScoped = Get.find<CounterController>(context);
+                  final resolvedScoped = Get.find<CounterController>(context: context);
                   expect(resolvedScoped.count.value, 10);
 
                   // Without context: falls back to global controller (100)
@@ -820,7 +820,7 @@ void main() {
             child: Builder(
               builder: (context) {
                 // Initialize the service via scoped lookup once
-                Get.find<DatabaseService>(context);
+                Get.find<DatabaseService>(context: context);
                 return const Text('Active Scope');
               },
             ),
@@ -847,7 +847,7 @@ void main() {
               bindings: [Bind<CounterController>(() => controller)],
               child: Builder(
                 builder: (context) {
-                  Get.find<CounterController>(context);
+                  Get.find<CounterController>(context: context);
                   return const Text('Active Scope');
                 },
               ),
@@ -881,7 +881,7 @@ void main() {
                   bindings: [Bind<CounterController>(() => controller)],
                   child: Builder(
                     builder: (context) {
-                      Get.find<CounterController>(context);
+                      Get.find<CounterController>(context: context);
                       return const Text('Active Scope');
                     },
                   ),
@@ -922,8 +922,8 @@ void main() {
               ],
               child: Builder(
                 builder: (context) {
-                  Get.find<SiblingControllerA>(context);
-                  Get.find<SiblingControllerB>(context);
+                  Get.find<SiblingControllerA>(context: context);
+                  Get.find<SiblingControllerB>(context: context);
                   return const Text('Active Scope');
                 },
               ),
@@ -949,7 +949,7 @@ void main() {
             bindings: [Bind<CounterController>(() => counter)],
             home: Builder(
               builder: (context) {
-                final resolved = Get.find<CounterController>(context);
+                final resolved = Get.find<CounterController>(context: context);
                 return Text('Count: ${resolved.count.value}');
               },
             ),
@@ -1121,9 +1121,9 @@ void main() {
       expect(list, isEmpty);
     });
 
-    test('RxSList initial status with pre-populated data is still idle', () {
+    test('RxSList initial status with pre-populated data starts loaded', () {
       final list = RxSList<int>([1, 2, 3]);
-      expect(list.status, RxListStatus.idle);
+      expect(list.status, RxListStatus.loaded);
       expect(list.length, 3);
     });
 
@@ -1203,7 +1203,7 @@ void main() {
     test('.ops extension converts List to RxSList', () {
       final list = <int>[10, 20].ops;
       expect(list, isA<RxSList<int>>());
-      expect(list.status, RxListStatus.idle);
+      expect(list.status, RxListStatus.loaded);
       expect(list.rawList, [10, 20]);
     });
 

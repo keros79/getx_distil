@@ -8,6 +8,7 @@ export 'src/rx/rx_s.dart';
 export 'src/rx/workers.dart';
 
 export 'src/state_manager/obx.dart';
+export 'src/state_manager/get_builder.dart';
 export 'src/state_manager/getx_controller.dart';
 export 'src/state_manager/get_view.dart';
 export 'src/state_manager/translations.dart';

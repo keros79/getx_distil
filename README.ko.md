@@ -30,14 +30,36 @@ Flutter를 위한 **고성능 마이크로 상태 관리 및 트리 스코프 �
   루프 반복문 내에서 대량의 요소 변경이 일어날 때 매번 값 변경 이벤트를 발생시켜 화면을 무수히 리빌드하는 대신, 변경점들을 묶어 단 1회의 마이크로태스크 UI 리프레시만 예약 및 수행합니다.
 * 📋 **상태 인지 반응형 리스트 (`RxSList`)**
   [`RxList`]를 확장하여 `idle`/`loading`/`loaded`/`empty`/`error` 상태를 자체 관리합니다. 모든 변경 연산이 자동으로 상태를 동기화하므로 별도의 `isLoading`/`errorMessage` 옵저버블이 필요 없습니다.
+* ⏳ **한 줄 비동기 로딩 (`load()` / `loadMore()`)**
+  `await users.load(() => api.fetch())` 한 줄로 `RxSList`/`RxS`의 `idle → loading → loaded/empty/error` 전환을 자동 처리합니다. 실패 시 기존 데이터를 유지하고, 겹친 호출의 오래된 응답은 무시하며, 예외는 Worker에도 전달됩니다. `loadMore()`는 `loading` 깜빡임 없이 다음 페이지를 이어 붙입니다.
 * 📦 **상태 인지 단일 값 (`RxS`)**
   [`Rxn`]을 확장하여 `idle`/`loading`/`loaded`/`error` 상태를 자체 관리합니다. nullable 단일 객체 상태에 적합하며, 값 설정 시 자동으로 `loaded`로 전환되고 error는 sticky하게 유지됩니다.
+* 🗺️ **반응형 컬렉션 (`RxList` / `RxMap` / `RxSet`)**
+  세 컬렉션 모두 동일한 더티 플래그 마이크로태스크 배칭, 읽기 고속 트랙, Worker 호환성을 공유합니다. `<K, V>{}.obs`, `<E>{}.obs`가 `<E>[].obs`와 똑같이 동작합니다.
+* 🧱 **명령형 리빌드 (`GetBuilder` + `update(ids)`)**
+  `Rx` 대신 `update()`를 선호하는 컨트롤러를 위해 `GetBuilder`를 제공합니다. `update()`는 id 없는 `GetBuilder`를, `update(['x'])`는 `GetBuilder(id: 'x')`만 리빌드합니다.
+* ⏱️ **완전한 Worker 세트**
+  `ever`, `everAll`, `once`, `debounce`, `interval`과 함께 어떤 옵저버블이든 `Stream`으로 구동하는 `Rx.bindStream`을 제공합니다. `updateSequential`의 예외는 `ever(onError:)`와 `await` 호출자에게 전달되며 조용히 사라지지 않습니다.
+* 🔥 **Fenix & GetX 스타일 `tag:`**
+  `Get.lazyPut(fenix: true)`는 삭제된 의존성을 다음 `find`에서 다시 생성합니다. `Get.find<T>(tag: 'x')`는 전역 레지스트리용으로 GetX와 동일한 네임드 `tag:`를 사용합니다. 스코프 DI(`BindingWidget`)는 의도적으로 태그가 없습니다: 타입 + 위젯 트리 위치가 곧 식별자입니다.
 * 🔍 **직관적인 DI 디버깅 가이드**
   `Get.find`가 의존성을 찾지 못해 실패할 때 단순한 에러 스택 대신, 요청을 호출한 위젯명, 정확한 상위 조상 위젯 계층 구조 경로(Tree Path), 그리고 현재 메모리에 올라와 있는 전역/불멸 서비스 목록을 한눈에 표시해 줍니다.
 * ⚡ **고속 트랙(Fast-Path) 추적 플래그 (`Notifier.isTracking`)**
   오리지널 GetX에서는 `Obx` 외부(일반 비즈니스 로직 루프, 백그라운드 연산 등)에서 반응형 변수를 단순히 읽기만 해도 매번 전역 프록시(`RxInterface.proxy`) 탐색과 null 여부 체크를 거치게 됩니다. `getx_distil`은 정적 부울 플래그 `isTracking`을 도입하여 `Obx` 빌드 중이 아닐 때는 복잡한 프록시 탐색과 등록 파이프라인을 원천적으로 우회(bypass)하도록 개선함으로써, 대량 데이터 순회 및 연산 시의 CPU 부하와 불필요한 탐색 오버헤드를 극적으로 제거했습니다.
 
 > **[getx_distil vs GetX vs RiverPod3.0 비교](https://getxdistil.web.app/comparison)**
+
+> [!IMPORTANT]
+> **1.x → 2.0 마이그레이션**
+>
+> `Get.find`가 GetX의 `tag:` 스타일과 동일한 **네임드 파라미터**를 사용합니다:
+>
+> ```dart
+> Get.find<T>(context)          →  Get.find<T>(context: context)
+> Get.find<T>(null, 'tag')      →  Get.find<T>(tag: 'tag')
+> ```
+>
+> 동작 변경: 초기 데이터가 있는 `RxS(value)` / `RxSList([...])`는 `loaded`로 시작합니다(빈 값/null은 여전히 `idle`). `updateSequential`은 `onError:`가 없으면 `await` 호출자에게 예외를 다시 던집니다. `fenix` 의존성은 `Get.delete` 후에도 빌더가 유지됩니다. `Get.put`은 대기 중인 lazy 팩토리를 호출하는 대신 교체합니다.
 
 ---
 
@@ -63,8 +85,10 @@ class CounterController extends GetxController {
   final name = Rxn<String>();          // Rxn<String> (초기값 null)
   final activeIndex = Rxn<int>();      // Rxn<int> (초기값 null)
 
-  // 3. 컬렉션 타입 반응형 변수 (Collection Observables)
-  final items = <String>[].obs;        // RxList<String> (변경 사항 자동 일괄 업데이트)
+  // 3. 컬렉션 타입 반응형 변수 (변경 사항은 1회 리빌드로 자동 일괄 처리)
+  final items = <String>[].obs;        // RxList<String>
+  final prefs = <String, bool>{}.obs;  // RxMap<String, bool>
+  final selected = <int>{}.obs;        // RxSet<int>
 
   // 4. 커스텀 객체 반응형 변수 (Custom Object Observables)
   final user = User(name: 'Guest').obs; // Rx<User>
@@ -108,6 +132,43 @@ Obx(() => Text('${controller.count.value}'));
 >     : const Text('로그인이 필요합니다.')
 > ```
 
+#### 명령형 대안 — `GetBuilder` & `update(ids)`
+
+컨트롤러가 일반 필드를 유지하며 `update()`를 호출하는 스타일이라면 `GetBuilder`로 바인딩합니다. id 범위 지정은 GetX와 완전히 동일합니다: `update()`는 id가 **없는** 모든 `GetBuilder`를, `update(['badge'])`는 `GetBuilder(id: 'badge')`만 리빌드합니다.
+
+```dart
+class CartController extends GetxController {
+  int total = 0;
+  int badge = 0;
+
+  void addItem() {
+    total += 1;
+    badge += 1;
+    update();          // → id 없는 GetBuilder
+    update(['badge']); // → GetBuilder(id: 'badge')만
+  }
+}
+
+GetBuilder<CartController>(builder: (c) => Text('Total: ${c.total}'));
+GetBuilder<CartController>(id: 'badge', builder: (c) => Badge(count: c.badge));
+
+// 컨트롤러 해결: `init:`을 주면 Get.put으로 등록(dispose 시 자동 제거),
+// 없으면 하이브리드 Get.find(context: ..., tag: ...) 탐색을 사용합니다.
+GetBuilder<CartController>(init: CartController(), builder: ...);
+```
+
+#### 스트림 & 순차 비동기 업데이트
+
+```dart
+final ticks = 0.obs;
+ticks.bindStream(Stream.periodic(const Duration(seconds: 1), (i) => i)); // close() 시 자동 해제
+
+// FIFO 큐 — 예외는 절대 삼켜지지 않습니다:
+await balance.updateSequential((v) async => v + await fetchDelta()); // 실패 시 호출자에게 throw
+balance.updateSequential(refresh, onError: (e, s) => log(e));       // 또는 현장에서 처리
+ever(balance, print, onError: (e) => log(e));                        // Worker도 관찰 가능
+```
+
 ---
 
 ### 2. 📋 상태 인지 반응형 리스트 (`RxSList`)
@@ -115,7 +176,10 @@ Obx(() => Text('${controller.count.value}'));
 
 ```dart
 final items = <String>[].ops; // List<T> → RxSList<T> via .ops extension
-print(items.status); // RxListStatus.idle (초기값)
+print(items.status); // RxListStatus.idle — 아직 아무것도 로드되지 않음
+
+final seeded = ['apple', 'banana'].ops;
+print(seeded.status); // RxListStatus.loaded — 데이터가 이미 존재
 ```
 
 #### 상태 자동 동기화
@@ -174,6 +238,25 @@ paged.hasMore = page2.isNotEmpty; // 마지막 페이지면 false
 ```dart
 Obx(() => Text(paged.hasMore ? 'More available' : 'All loaded'));
 ```
+#### 비동기 로딩 — `load()` / `loadMore()`
+
+API 호출마다 `setLoading()` / `assignAll()` / `setError()`를 직접 감싸는 대신, 리스트가 스스로 상태를 전환하게 하세요:
+
+```dart
+final users = <User>[].ops;
+
+// idle → loading → loaded (또는 empty). 예외는 상태(error)로 흡수되며
+// 반환된 Future는 절대 throw하지 않습니다. 기존 데이터는 그대로 유지됩니다.
+await users.load(() => api.fetchUsers());
+
+// 원시 예외를 사용자 친화적 메시지로 매핑
+await users.load(() => api.fetchUsers(), errorMessage: (e) => '사용자 목록을 불러올 수 없습니다');
+
+// 페이징: loading 상태로 전환하지 않고 다음 페이지를 이어 붙이며 hasMore를 갱신
+await users.loadMore(() => api.fetchUsers(page: ++page)); // hasMore = page.isNotEmpty
+```
+
+`load()` 호출이 겹쳐도 안전합니다. 가장 최근 호출만 결과를 반영하므로 늦게 도착한 오래된 응답이 새 데이터를 덮어쓰지 않습니다. 예외는 `ever(users, ..., onError: ...)`로 연결된 Worker에도 전달됩니다.
 
 ---
 
@@ -183,7 +266,10 @@ Obx(() => Text(paged.hasMore ? 'More available' : 'All loaded'));
 
 ```dart
 final user = RxS<User?>(null); // T?로 nullable 지원
-print(user.status); // RxDataStatus.idle (초기값)
+print(user.status); // RxDataStatus.idle — 아직 데이터 없음
+
+final profile = User(name: 'Alice').ops; // T → RxS<T> via .ops extension
+print(profile.status); // RxDataStatus.loaded — 초기 데이터 존재
 ```
 
 #### 상태 자동 동기화
@@ -227,6 +313,25 @@ RxS<String?> message = RxS<String?>(null);
 message.value = '안녕하세요'; // loaded with value
 message.value = null;          // loaded, data is null
 ```
+#### 비동기 로딩 — `load()`
+
+단일 값에도 같은 한 줄이 있습니다. `load()`는 상태를 `loading`으로 바꾸고, 가져온 값을 대입(→ `loaded`)하거나, 실패 시 기존 값을 유지한 채 `setError()`를 호출합니다:
+
+```dart
+final user = RxS<User?>(null);
+
+await user.load(() => api.fetchUser());                          // idle → loading → loaded
+await user.load(() => api.fetchUser(), errorMessage: (e) => '오프라인'); // → error('오프라인')
+
+// UI는 그대로 선언형으로:
+Obx(() => user.on(
+  loading: () => const CircularProgressIndicator(),
+  loaded:  (u) => Text('안녕하세요, ${u?.name}'),
+  error:   (msg) => Text(msg ?? '알 수 없는 오류'),
+));
+```
+
+동시에 실행된 `load()`는 마지막 호출이 이기는(last-write-wins) 규칙을 따르므로 오래된 응답이 새 값을 덮어쓰지 않습니다.
 
 ---
 
@@ -243,6 +348,12 @@ Get.lazyPut(() => CounterController());
 
 // 3. tag를 통한 고유 식별 등록 (동일 타입의 멀티 인스턴스)
 Get.put(CounterController(), tag: 'special_counter');
+
+// 4. fenix: Get.delete 후에도 살아남음 — 인스턴스는 폐기(onClose 실행)되지만
+//    빌더는 등록 상태로 남아 다음 Get.find에서 새로 생성됩니다.
+Get.lazyPut(() => SessionController(), fenix: true);
+Get.delete<SessionController>();          // onClose() 실행, isRegistered는 true 유지
+final fresh = Get.find<SessionController>(); // 새 인스턴스
 ```
 
 인스턴스 조회 (BuildContext가 필요 없는 전역 참조):
@@ -251,17 +362,17 @@ Get.put(CounterController(), tag: 'special_counter');
 final controller = Get.find<CounterController>();
 
 // tag를 지정해 등록된 인스턴스 검색
-final specialController = Get.find<CounterController>(null, 'special_counter');
+final specialController = Get.find<CounterController>(tag: 'special_counter');
 ```
 
 > [!TIP]
-> `getx_distil`은 **하이브리드 DI**를 지원합니다. `Get.find(context)`와 같이 `BuildContext`를 함께 전달하면 화면 위젯 트리 범위의 DI(`BindingWidget`)에서 인스턴스를 우선 탐색하며, 존재하지 않을 경우 자동으로 전역 범위(Global Registry)를 찾아 인스턴스를 반환합니다.
+> `getx_distil`은 **하이브리드 DI**를 지원합니다. `Get.find(context: context)`와 같이 `BuildContext`를 함께 전달하면 화면 위젯 트리 범위의 DI(`BindingWidget`)에서 인스턴스를 우선 탐색하며, 존재하지 않을 경우 자동으로 전역 범위(Global Registry)를 찾아 인스턴스를 반환합니다. `tag:`는 **전역 레지스트리 전용** 개념입니다: 태그가 있는 조회는 `Get.put(tag:)` 등록으로 바로 가며 위젯 트리를 건너뜁니다. 스코프 DI는 문자열이 아니라 타입 + 트리 위치로 식별되기 때문입니다.
 > 
 > 또한 v1.0.1부터는 `BindingWidget`에 등록된 스코프 컨트롤러라도 위젯 트리에서 한 번 생성되었다면, 메모리 누수가 없는 안전한 약한 참조 캐시(Weak Reference Cache)를 통해 **`BuildContext` 없이 `Get.find<T>()` 호출만으로 조회**할 수 있습니다.
 > 
 > **Get.find() 의존성 탐색 순서:**
 > 
-> * **`BuildContext`가 있을 때 (`Get.find<T>(context)`):**
+> * **`BuildContext`가 있을 때 (`Get.find<T>(context: context)`):**
 >   1. **전역 불멸 서비스 (Global Immortal):** 요청한 타입이 전역 `GetxService`(소멸되지 않는 위젯 스코프 서비스)인지 먼저 확인합니다.
 >   2. **위젯 트리 (Widget Tree):** 위젯 트리를 상위로 거슬러 올라가며 일치하는 `BindingWidget` 스코프를 탐색합니다.
 >   3. **전역 레지스트리 (Global Registry):** 전역 레지스트리(`Get.put` / `Get.lazyPut`)에서 탐색을 시도합니다.
@@ -270,11 +381,11 @@ final specialController = Get.find<CounterController>(null, 'special_counter');
 > * **`BuildContext`가 없을 때 (`Get.find<T>()`):**
 >   1. **전역 레지스트리 (Global Registry):** 전역 레지스트리(`Get.put` / `Get.lazyPut`) 조회를 우선합니다.
 >   2. **전역 불멸 서비스 (Global Immortal):** 위젯 스코프를 통해 등록된 전역 `GetxService` 인스턴스 중 일치하는 항목이 있는지 확인합니다.
->   3. **전역 약한 레지스트리 및 활성 상태 (Global Weak Registry / Active States):** 약한 참조 캐시나 활성화되어 있는 `BindingWidget` 상태를 뒤져 매칭되는 위젯 스코프 컨트롤러를 찾아(혹은 온디맨드로 생성하여) 반환합니다.
+>   3. **전역 약한 레지스트리 및 활성 상태 (Global Weak Registry / Active States):** 먼저 약한 참조 캐시에서 **살아 있는** 스코프 인스턴스를 찾고, 없을 때만 활성 `BindingWidget` 스코프에서 바인딩을 생성합니다. 동일한 `T`에 여러 스코프가 매칭되면 가장 최근에 생성/마운트된 것을 사용하고 **1회성 디버그 경고**를 출력합니다 — `BuildContext`를 전달해 위젯 트리가 어느 스코프인지 결정하게 하세요.
 > 
 > ```dart
 > // 1. 컨텍스트 기반 조회 (위젯 트리 우선 탐색)
-> final localController = Get.find<CounterController>(context);
+> final localController = Get.find<CounterController>(context: context);
 > 
 > // 2. 컨텍스트 없는 조회 (전역 레지스트리 우선 탐색)
 > final globalController = Get.find<CounterController>();
@@ -340,6 +451,9 @@ class SettingsPage extends GetView<SettingsController> {
 }
 ```
 
+> [!NOTE]
+> 스코프 DI는 의도적으로 **태그가 없습니다**. "어느 인스턴스인가?"는 위젯 트리 위치가 이미 답하므로 `Bind`에도 `GetView`에도 `tag`가 없습니다. 같은 타입의 인스턴스가 두 개 필요하면 각각 별도의 `BindingWidget` 스코프를 주세요. 태그는 전역 레지스트리(`Get.put(tag:)` / `Get.find(tag:)`)에서만 사용합니다.
+
 ---
 
 ### 6. 🌐 전역 불멸 서비스 (`GetxService`)
@@ -391,6 +505,16 @@ class SearchController extends GetxController {
     super.onClose();
   }
 }
+```
+
+전체 Worker 세트:
+
+```dart
+ever(rx, (v) => ..., onError: (e) => ...); // 모든 변경 (+ updateSequential의 예외)
+everAll([rxA, rxB], (v) => ...);            // 여러 옵저버블 중 하나라도 변경
+once(rx, (v) => ...);                       // 첫 변경 1회만, 이후 자동 dispose
+debounce(rx, (v) => ..., time: const Duration(milliseconds: 500)); // 입력이 멈춘 뒤
+interval(rx, (v) => ..., time: const Duration(seconds: 1));        // 윈도우당 최대 1회 (첫 값 우선)
 ```
 
 ---

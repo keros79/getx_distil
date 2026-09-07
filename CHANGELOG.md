@@ -1,3 +1,25 @@
+## 2.0.0
+
+### ⚠️ Breaking Changes
+
+* **`Get.find` uses named parameters** (GetX-style `tag:`): `Get.find<T>(context)` → `Get.find<T>(context: context)`, `Get.find<T>(null, 'tag')` → `Get.find<T>(tag: 'tag')`. Tags remain a **global-registry-only** concept: a tagged lookup resolves from `Get.put(tag:)` registrations and skips scoped DI by design (scoped instances are identified by type + widget-tree position, never by a string).
+* **Seeded `RxS` / `RxSList` start as `loaded`**: `RxS(value)` with a non-null value and `RxSList([...])` / `[...].ops` with a non-empty list start in `loaded`. Empty/null initial data still starts `idle`.
+* **`Rx.updateSequential` no longer swallows errors**: an exception inside `action` completes the returned future with that error (an `await` rethrows; fire-and-forget surfaces as an unhandled Zone error). Pass `onError:` to handle it in place. Errors are still forwarded to attached stream consumers (`ever(onError:)`, `listen`), but only when one exists — no more `addError` into an empty broadcast stream.
+* **`Get.put` replaces a pending lazy factory**: when the key only holds an un-instantiated `lazyPut` builder, the provided instance is registered instead of calling the old factory. A live instance is still preserved (singleton behaviour unchanged).
+
+### ✨ New
+
+* **`RxS.load()` / `RxSList.load()` / `RxSList.loadMore()`**: one-line async loading that drives `idle → loading → loaded/empty/error` automatically. Errors are captured into the status (the future never throws), previous data is preserved on failure, overlapping calls follow last-write-wins so stale responses are discarded, and errors are forwarded to `ever(onError:)` Workers. `loadMore()` appends a page without switching to `loading` and updates `hasMore`.
+* **`GetBuilder<T>`** widget with `id`, `init`, `global`, `tag`, `autoRemove`, `initState`, `dispose`. Resolves controllers through the hybrid `Get.find(context:, tag:)` lookup, so it works with `BindingWidget` scopes as well as the global registry.
+* **`GetxController.update(ids)` honours ids**: `update()` notifies global listeners, `update(['x'])` notifies only listeners registered via `addListenerId('x', …)`. Added `refresh()`, `refreshGroup(id)`, `addListenerId`, `removeListenerId`, `disposeId`, `hasListeners`.
+* **`RxMap<K, V>` and `RxSet<E>`** with the same dirty-flag microtask batching, `Notifier.isTracking` read fast-path and Worker compatibility as `RxList`. `Map.obs` / `Set.obs` extensions, `assignAll`, `rawMap` / `rawSet`. Shared batching logic extracted into the `RxBatchNotifier` mixin.
+* **Workers**: `interval` (rate-limit, first value per window), `everAll` (multiple observables), `ever(onError:)`. **`GetListenable.bindStream(stream)`** drives any observable from a `Stream`; subscriptions are cancelled on `close()` or `unbindStreams()`.
+* **`Get.lazyPut(fenix: true)` now works**: `Get.delete` disposes the instance (`onClose` runs) but keeps the builder registered, so the next `find` re-creates it. `Get.reset(clearFactory: false)` keeps lazy/fenix builders. Added `Get.isPrepared<T>()`.
+
+### 🛠️ Fixed
+
+* **Context-less `Get.find<T>()` ambiguity**: live scoped instances are always preferred over instantiating a binding in another active `BindingWidget`; instantiation only happens when no live instance exists. When several live instances or several declaring scopes match the same type, the most recent one is used and a **one-time debug warning** tells you to pass `context:` so the widget tree decides. Added `BindingWidgetState.liveInstanceCount<T>()` for diagnostics.
+
 ## 1.3.2
 
 * **TDD Documentation & Example**: Added comprehensive TDD (Test-Driven Development) documentation in both `README.md` and `README.ko.md`, covering mock service injection patterns with `GetxService` and `BindingWidget`. Includes a full example app (`tdd_test_page.dart`, `tdd_test_controller.dart`) and a corresponding widget test suite (`tdd_example_test.dart`) demonstrating how to write testable controllers with injectable mock services.

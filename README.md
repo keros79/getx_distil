@@ -30,14 +30,36 @@ However, as the Flutter ecosystem matured toward declarative routing (like `GoRo
   Instead of triggering expensive UI rebuilds on every single mutation inside a loop, `RxList` aggregates changes and schedules a single microtask UI refresh.
 * 📋 **Status-Aware Reactive List (`RxSList`)**
   An [`RxList`] subclass that carries its own `idle`/`loading`/`loaded`/`empty`/`error` status, automatically synchronized with every mutation. No separate `isLoading`/`errorMessage` observables needed.
+* ⏳ **One-line Async Loading (`load()` / `loadMore()`)**
+  `await users.load(() => api.fetch())` drives `idle → loading → loaded/empty/error` on `RxSList` and `RxS` automatically, keeps previous data on failure, ignores stale overlapping responses and forwards errors to Workers. `loadMore()` appends the next page without flashing `loading`.
 * 📦 **Status-Aware Single Value (`RxS`)**
   An [`Rxn`] subclass that carries its own `idle`/`loading`/`loaded`/`error` status for nullable single-object state. Automatically transitions to `loaded` on value set, with sticky error state.
+* 🗺️ **Reactive Collections (`RxList` / `RxMap` / `RxSet`)**
+  All three collections share the same dirty-flag microtask batching, read fast-path and Worker compatibility. `<K, V>{}.obs` and `<E>{}.obs` work just like `<E>[].obs`.
+* 🧱 **Imperative Rebuilds (`GetBuilder` + `update(ids)`)**
+  For controllers that prefer `update()` over `Rx`, `GetBuilder` rebuilds on `update()`, and `GetBuilder(id: 'x')` rebuilds only on `update(['x'])`.
+* ⏱️ **Complete Worker Set**
+  `ever`, `everAll`, `once`, `debounce`, `interval`, plus `Rx.bindStream` to drive any observable from a `Stream`. Errors from `updateSequential` reach `ever(onError:)` and the awaiting caller — nothing is silently dropped.
+* 🔥 **Fenix & GetX-style `tag:`**
+  `Get.lazyPut(fenix: true)` re-creates a deleted dependency on the next `find`. `Get.find<T>(tag: 'x')` uses GetX's named `tag:` for the global registry. Scoped DI (`BindingWidget`) stays deliberately tag-free: type + widget-tree position is the identifier.
 * 🔍 **High-Visibility DI Debugging**
   When `Get.find` fails, it no longer throws a cryptic message. It prints a comprehensive debug layout showing the requested context name, the exact parent ancestor widget hierarchy path, and active services in memory.
 * ⚡ **High-Performance Fast-Path Tracking (`Notifier.isTracking`)**
   In original GetX, reading any reactive variable (even in normal business logic loops or background tasks outside of `Obx` widgets) triggers a lookup of the global tracking proxy. `getx_distil` introduces a lightweight static boolean flag `isTracking`. Outside of active `Obx` build frames, this flag is `false`, bypassing the entire proxy lookup and dependency registration pipeline. This dramatically reduces CPU cycles during heavy calculation loops or traversals.
 
 > **[getx_distil vs GetX vs RiverPod3.0 Comparison](https://getxdistil.web.app/comparison)**
+
+> [!IMPORTANT]
+> **Migrating from 1.x to 2.0**
+>
+> `Get.find` now takes **named** parameters, matching GetX's `tag:` style:
+>
+> ```dart
+> Get.find<T>(context)          →  Get.find<T>(context: context)
+> Get.find<T>(null, 'tag')      →  Get.find<T>(tag: 'tag')
+> ```
+>
+> Behaviour changes: `RxS(value)` / `RxSList([...])` seeded with data now start as `loaded` (empty/null still start `idle`); `updateSequential` rethrows to the awaiting caller unless `onError:` is given; `Get.delete` on a `fenix` dependency keeps its builder; `Get.put` replaces a pending lazy factory instead of calling it.
 
 ---
 
@@ -63,8 +85,10 @@ class CounterController extends GetxController {
   final name = Rxn<String>();          // Rxn<String> (initially null)
   final activeIndex = Rxn<int>();      // Rxn<int> (initially null)
 
-  // 3. Collection Observables
-  final items = <String>[].obs;        // RxList<String> (mutations are auto-batched)
+  // 3. Collection Observables (mutations are auto-batched into one rebuild)
+  final items = <String>[].obs;        // RxList<String>
+  final prefs = <String, bool>{}.obs;  // RxMap<String, bool>
+  final selected = <int>{}.obs;        // RxSet<int>
 
   // 4. Custom Object Observables
   final user = User(name: 'Guest').obs; // Rx<User>
@@ -110,6 +134,43 @@ Obx(() => Text('${controller.count.value}'));
 >     : const Text('Login Required')
 > ```
 
+#### Imperative alternative — `GetBuilder` & `update(ids)`
+
+If a controller keeps plain fields and calls `update()`, bind it with `GetBuilder`. Ids scope rebuilds exactly like GetX: `update()` rebuilds every `GetBuilder` **without** an id, `update(['badge'])` rebuilds only `GetBuilder(id: 'badge')`.
+
+```dart
+class CartController extends GetxController {
+  int total = 0;
+  int badge = 0;
+
+  void addItem() {
+    total += 1;
+    badge += 1;
+    update();          // → GetBuilder without id
+    update(['badge']); // → GetBuilder(id: 'badge') only
+  }
+}
+
+GetBuilder<CartController>(builder: (c) => Text('Total: ${c.total}'));
+GetBuilder<CartController>(id: 'badge', builder: (c) => Badge(count: c.badge));
+
+// Controller resolution: `init:` registers via Get.put (auto-removed on dispose),
+// otherwise the hybrid Get.find(context: ..., tag: ...) lookup is used.
+GetBuilder<CartController>(init: CartController(), builder: ...);
+```
+
+#### Streams & sequential async updates
+
+```dart
+final ticks = 0.obs;
+ticks.bindStream(Stream.periodic(const Duration(seconds: 1), (i) => i)); // cancelled on close()
+
+// FIFO queue — errors are never swallowed:
+await balance.updateSequential((v) async => v + await fetchDelta()); // throws to the caller on failure
+balance.updateSequential(refresh, onError: (e, s) => log(e));       // or handle in place
+ever(balance, print, onError: (e) => log(e));                        // Workers see it too
+```
+
 ---
 
 ### 2. 📋 Status-Aware Reactive List (`RxSList`)
@@ -117,7 +178,10 @@ An extended [`RxList`] that carries its own **idle/loading/loaded/empty/error** 
 
 ```dart
 final items = <String>[].ops; // List<T> → RxSList<T> via .ops extension
-print(items.status); // RxListStatus.idle (initial)
+print(items.status); // RxListStatus.idle — nothing has been loaded yet
+
+final seeded = ['apple', 'banana'].ops;
+print(seeded.status); // RxListStatus.loaded — data is already present
 ```
 
 #### Status Auto-Sync
@@ -176,6 +240,25 @@ The `hasMore` field is itself reactive (`Rx<bool>`), so it works seamlessly insi
 ```dart
 Obx(() => Text(paged.hasMore ? 'More available' : 'All loaded'));
 ```
+#### Async loading — `load()` / `loadMore()`
+
+Instead of hand-writing `setLoading()` / `assignAll()` / `setError()` around every API call, let the list drive its own status:
+
+```dart
+final users = <User>[].ops;
+
+// idle → loading → loaded (or empty). Errors are captured into the status —
+// the future never throws, and the previous items are kept underneath.
+await users.load(() => api.fetchUsers());
+
+// Map raw exceptions to a friendly message
+await users.load(() => api.fetchUsers(), errorMessage: (e) => 'Could not load users');
+
+// Paging: appends the next page WITHOUT flashing `loading`, and sets hasMore
+await users.loadMore(() => api.fetchUsers(page: ++page)); // hasMore = page.isNotEmpty
+```
+
+Overlapping `load()` calls are safe: only the most recent call may apply its result, so a slow, stale response can never overwrite fresh data. Errors are also forwarded to Workers attached via `ever(users, ..., onError: ...)`.
 
 ---
 
@@ -185,7 +268,10 @@ An extended [`Rxn`] that carries its own **idle/loading/loaded/error** status, a
 
 ```dart
 final user = RxS<User?>(null); // T? for nullable support
-print(user.status); // RxDataStatus.idle (initial)
+print(user.status); // RxDataStatus.idle — no data yet
+
+final profile = User(name: 'Alice').ops; // T → RxS<T> via .ops extension
+print(profile.status); // RxDataStatus.loaded — seeded with data
 ```
 
 #### Status Auto-Sync
@@ -229,6 +315,25 @@ RxS<String?> message = RxS<String?>(null);
 message.value = 'Hello';  // loaded with value
 message.value = null;      // loaded, data is null
 ```
+#### Async loading — `load()`
+
+The same one-liner exists for single values. `load()` moves the status to `loading`, assigns the fetched value (→ `loaded`), or calls `setError()` on failure while keeping the previous value:
+
+```dart
+final user = RxS<User?>(null);
+
+await user.load(() => api.fetchUser());                       // idle → loading → loaded
+await user.load(() => api.fetchUser(), errorMessage: (e) => 'Offline'); // → error('Offline')
+
+// UI stays declarative:
+Obx(() => user.on(
+  loading: () => const CircularProgressIndicator(),
+  loaded:  (u) => Text('Hello, ${u?.name}'),
+  error:   (msg) => Text(msg ?? 'Unknown error'),
+));
+```
+
+Concurrent `load()` calls follow last-write-wins: a stale response never overwrites a newer one.
 
 ---
 
@@ -245,6 +350,12 @@ Get.lazyPut(() => CounterController());
 
 // 3. Register multiple instances of the same type using tags
 Get.put(CounterController(), tag: 'special_counter');
+
+// 4. fenix: survives Get.delete — the instance is disposed (onClose runs) but the
+//    builder stays registered, so the next Get.find re-creates it.
+Get.lazyPut(() => SessionController(), fenix: true);
+Get.delete<SessionController>();          // onClose() runs, isRegistered stays true
+final fresh = Get.find<SessionController>(); // brand-new instance
 ```
 
 Finding instances (context-less anywhere in your code):
@@ -253,17 +364,17 @@ Finding instances (context-less anywhere in your code):
 final controller = Get.find<CounterController>();
 
 // Resolve tagged instances
-final specialController = Get.find<CounterController>(null, 'special_counter');
+final specialController = Get.find<CounterController>(tag: 'special_counter');
 ```
 
 > [!TIP]
-> `getx_distil` features a **Hybrid DI** system. If you provide a `BuildContext` like `Get.find(context)`, it will prioritize widget tree-scoped lookup (`BindingWidget`). If it is not found, it seamlessly falls back to resolving the dependency from the global registry.
+> `getx_distil` features a **Hybrid DI** system. If you provide a `BuildContext` like `Get.find(context: context)`, it will prioritize widget tree-scoped lookup (`BindingWidget`). If it is not found, it seamlessly falls back to resolving the dependency from the global registry. A `tag:` is a **global-registry-only** concept: a tagged lookup goes straight to `Get.put(tag:)` registrations and skips the widget tree, because scoped DI is identified by type + tree position, never by a string.
 > 
 > Furthermore, since v1.0.1, if a controller is registered via `BindingWidget` and has already been instantiated in the widget tree, you can retrieve it **without a context** using a simple `Get.find<T>()` call via a safe, non-leaking static weak reference cache.
 > 
 > **How Get.find() Resolves Dependencies:**
 > 
-> * **When `BuildContext` is provided (`Get.find<T>(context)`):**
+> * **When `BuildContext` is provided (`Get.find<T>(context: context)`):**
 >   1. **Global Immortal:** Checks if the requested type is a global `GetxService` (immortal widget-scoped service).
 >   2. **Widget Tree:** Traverses up the widget tree to find a matching `BindingWidget` scope.
 >   3. **Global Registry:** Falls back to global registry (`Get.put` / `Get.lazyPut`).
@@ -272,11 +383,11 @@ final specialController = Get.find<CounterController>(null, 'special_counter');
 > * **When `BuildContext` is NOT provided (`Get.find<T>()`):**
 >   1. **Global Registry:** Prioritizes checking the global registry (`Get.put` / `Get.lazyPut`).
 >   2. **Global Immortal:** Checks if the requested type is a global `GetxService` registered via a widget scope.
->   3. **Global Weak Registry / Active States:** Checks the weak reference cache or active `BindingWidget` states to find/instantiate widget-scoped controllers.
+>   3. **Global Weak Registry / Active States:** Checks the weak reference cache for a **live** scoped instance first; only if none exists does it instantiate the binding in an active `BindingWidget` scope. If several scopes match the same `T`, the most recently created/mounted one is used and a **one-time debug warning** is printed — pass a `BuildContext` so the widget tree decides which scope you mean.
 > 
 > ```dart
 > // 1. Context-based Lookup (prioritizes widget tree)
-> final localController = Get.find<CounterController>(context);
+> final localController = Get.find<CounterController>(context: context);
 > 
 > // 2. Context-less Lookup (prioritizes global registry)
 > final globalController = Get.find<CounterController>();
@@ -342,6 +453,9 @@ class SettingsPage extends GetView<SettingsController> {
 }
 ```
 
+> [!NOTE]
+> Scoped DI is intentionally **tag-free**. The widget tree already answers "which instance?" by position, so `Bind` has no `tag` and `GetView` has no `tag`. Need two instances of the same type? Give each its own `BindingWidget` scope. Tags belong to the global registry only (`Get.put(tag:)` / `Get.find(tag:)`).
+
 ---
 
 ### 6. 🌐 Global Persistent Services (`GetxService`)
@@ -393,6 +507,16 @@ class SearchController extends GetxController {
     super.onClose();
   }
 }
+```
+
+The full worker set:
+
+```dart
+ever(rx, (v) => ..., onError: (e) => ...); // every change (+ errors from updateSequential)
+everAll([rxA, rxB], (v) => ...);            // any of several observables changed
+once(rx, (v) => ...);                       // first change only, then auto-disposes
+debounce(rx, (v) => ..., time: const Duration(milliseconds: 500)); // after a quiet period
+interval(rx, (v) => ..., time: const Duration(seconds: 1));        // at most once per window (first value wins)
 ```
 
 ---

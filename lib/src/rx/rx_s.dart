@@ -51,7 +51,7 @@ class RxS<T> extends Rxn<T> {
 
   /// Internal status observable — read via [status] getter, mutated via
   /// the [status] setter for clean DX.
-  final Rx<RxDataStatus> _status = Rx<RxDataStatus>(RxDataStatus.idle);
+  final Rx<RxDataStatus> _status;
 
   /// The current status of this reactive value.
   RxDataStatus get status => _status.value;
@@ -74,9 +74,14 @@ class RxS<T> extends Rxn<T> {
 
   /// Creates an [RxS] optionally initialized with [initial] value.
   ///
-  /// The initial status is [RxDataStatus.idle] by default so that the
-  /// UI shows an idle state until the first data mutation or status change.
-  RxS([super.initial]);
+  /// - No initial value (or `null`) → status starts as [RxDataStatus.idle],
+  ///   so the UI shows an idle state until the first mutation or status change.
+  /// - A non-null [initial] value → status starts as [RxDataStatus.loaded],
+  ///   because data is already present (e.g. `User(...).ops`).
+  RxS([super.initial])
+      : _status = Rx<RxDataStatus>(
+          initial == null ? RxDataStatus.idle : RxDataStatus.loaded,
+        );
 
   // ─── Status Mutator Helpers ────────────────────────────────────────────────
 
@@ -93,6 +98,48 @@ class RxS<T> extends Rxn<T> {
   void setError(String? errorMsg) {
     error = errorMsg;
     status = RxDataStatus.error;
+  }
+
+  // ─── Async loading ─────────────────────────────────────────────────────────
+
+  /// Monotonic token so that only the **latest** [load] call may apply its
+  /// result; earlier, slower calls are discarded (last-write-wins).
+  int _loadToken = 0;
+
+  /// Runs [fetch] and drives [status] automatically:
+  ///
+  /// * `loading` while the future is pending (the current [value] is
+  ///   preserved underneath),
+  /// * `loaded` with the fetched value on success,
+  /// * `error` (via [setError]) on failure — the previous value is kept.
+  ///
+  /// Errors are captured into the status instead of being thrown, so the
+  /// returned future always completes normally. They are additionally
+  /// forwarded to attached stream consumers (`ever(onError:)`, `listen`).
+  ///
+  /// When several [load] calls overlap, only the most recent one is allowed to
+  /// update the state; stale results are ignored.
+  ///
+  /// ```dart
+  /// final user = RxS<User?>(null);
+  /// await user.load(() => api.fetchUser());        // idle → loading → loaded
+  /// await user.load(() => throw 'offline');        // → error ('offline')
+  /// ```
+  Future<void> load(
+    Future<T?> Function() fetch, {
+    String Function(Object error)? errorMessage,
+  }) async {
+    final token = ++_loadToken;
+    status = RxDataStatus.loading;
+    try {
+      final result = await fetch();
+      if (token != _loadToken) return; // superseded by a newer load()
+      value = result; // → loaded
+    } catch (e, s) {
+      if (token != _loadToken) return;
+      notifyStreamError(e, s);
+      setError(errorMessage != null ? errorMessage(e) : e.toString());
+    }
   }
 
   // ─── Internal: auto-sync status after mutation ─────────────────────────────
@@ -126,10 +173,14 @@ class RxS<T> extends Rxn<T> {
 // ─── Extension: .ops — T → RxS<T> ────────────────────────────────────────────
 
 extension RxSOpsExt<T> on T {
-  /// Converts a plain value into an [RxS] with initial [RxDataStatus.idle].
+  /// Converts a plain value into an [RxS].
+  ///
+  /// A non-null value starts as [RxDataStatus.loaded]; a `null` value starts
+  /// as [RxDataStatus.idle].
   ///
   /// ```dart
-  /// final user = User(name: 'Alice').ops;
+  /// final user = User(name: 'Alice').ops; // status: loaded
+  /// final none = (null as User?).ops;      // status: idle
   /// ```
   RxS<T> get ops => RxS<T>(this);
 }

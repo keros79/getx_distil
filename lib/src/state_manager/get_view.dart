@@ -49,7 +49,7 @@ abstract class GetView<T> extends StatelessWidget {
         'GetView<$T>.controller was called outside of the build method, or before the build method started.',
       );
     }
-    return Get.find<T>(context);
+    return Get.find<T>(context: context);
   }
 
   @override
