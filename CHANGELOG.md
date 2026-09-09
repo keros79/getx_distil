@@ -1,3 +1,8 @@
+## 1.4.1
+
+* **Documentation Rewrite**: Rewrote `README.md` and `README.ko.md` around feature ownership, hybrid DI (global + tree-scoped), widget-tree lifetime, and View–Controller composition.
+* **LICENSE Recognition**: Restored the standard MIT license wording so pub.dev can detect the license (previously shown as unknown).
+
 ## 1.4.0
 
 ### ⚠️ Breaking Changes
