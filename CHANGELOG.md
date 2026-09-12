@@ -1,3 +1,13 @@
+## 1.4.3
+
+* **Jaspr Port Pointer**: Linked [`jaspr_getx_distil`](https://github.com/keros79/jaspr_getx_distil) from both `README.md` and `README.ko.md` — the same contracts ported to the Jaspr `Component` tree.
+
+## 1.4.2
+
+* **Example Architecture**: Restructured the example app to Feature-First + MVVM (`core/` / `models/` / `services/` / `views/`). Each `GoRoute` owns a screen-scoped `BindingWidget`; app-lifetime objects stay in `GetMaterialApp.bindings`.
+* **Recommended REST Stack**: The TDD screen now demonstrates `dio` + `retrofit` + `freezed` (`DTO → client → repository → Controller`) with `BindingWidget` mock overrides.
+* **Architecture Docs**: Added `example/AGENTS.md` and an "App architecture" section in both package READMEs so the example layout can be copied into an app's agent rules.
+
 ## 1.4.1
 
 * **Documentation Rewrite**: Rewrote `README.md` and `README.ko.md` around feature ownership, hybrid DI (global + tree-scoped), widget-tree lifetime, and View–Controller composition.

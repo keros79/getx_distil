@@ -20,6 +20,8 @@ Route / Feature
 
 You can keep application-wide services globally available and scope screen-specific controllers to the widget tree. You do not have to choose one lifetime model for the whole application.
 
+> **[Jaspr?]** Use [`jaspr_getx_distil`](https://github.com/keros79/jaspr_getx_distil) — the same contracts ported to the Jaspr `Component` tree.
+
 ## Why getx_distil?
 
 ### 1. Make View–Controller ownership visible
@@ -119,7 +121,7 @@ Add the package to `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  getx_distil: ^1.4.1
+  getx_distil: ^1.4.3
 ```
 
 Then import it:

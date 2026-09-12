@@ -20,6 +20,8 @@ Route / Feature
 
 앱 전체에서 사용하는 서비스는 전역으로 유지하고, 화면 전용 Controller는 위젯 트리에 scope할 수 있습니다. 애플리케이션 전체에 하나의 수명 관리 모델만 강제하지 않습니다.
 
+> **[Jaspr?]** [`jaspr_getx_distil`](https://github.com/keros79/jaspr_getx_distil)을 사용하세요 — 같은 계약을 Jaspr `Component` 트리로 포팅한 버전입니다.
+
 ## 왜 getx_distil인가?
 
 ### 1. View와 Controller의 소유권을 한눈에 표현합니다
@@ -119,7 +121,7 @@ idle → loading → loaded / empty
 
 ```yaml
 dependencies:
-  getx_distil: ^1.4.1
+  getx_distil: ^1.4.3
 ```
 
 그리고 패키지를 import합니다.

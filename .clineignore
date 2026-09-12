@@ -20,6 +20,21 @@ example/macos/
 example/windows/
 example/web/
 
+# Locks / binaries / native build leftovers
+pubspec.lock
+**/*.png
+**/*.ico
+**/*.dll
+**/*.pdb
+**/*.exp
+**/*.lib
+**/*.ilk
+**/*.obj
+**/*.tlog
+**/*.otf
+**/*.ttf
+**/*.jar
+
 # Secrets and local env (never feed to models)
 .env
 .env.*
