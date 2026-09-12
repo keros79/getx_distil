@@ -17,9 +17,11 @@ class NestedScopePage extends GetView<NestedScopeController> {
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         // controller.depth는 Rx이므로 Obx 유지
-        title: Obx(() => Text(
-          'nested_scope_appbar_title'.trArgs([controller.depth.toString()]),
-        )),
+        title: Obx(
+          () => Text(
+            'nested_scope_appbar_title'.trArgs([controller.depth.toString()]),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () {
@@ -41,9 +43,15 @@ class NestedScopePage extends GetView<NestedScopeController> {
                 // Isolated Counter Card with Nav Controls inside
                 _buildIsolatedCounter(controller, theme, isDark, primaryColor),
                 const SizedBox(height: 20),
-                
+
                 // Stack Actions
-                _buildNavControls(context, controller, theme, isDark, primaryColor),
+                _buildNavControls(
+                  context,
+                  controller,
+                  theme,
+                  isDark,
+                  primaryColor,
+                ),
               ],
             ),
           ),
@@ -52,13 +60,20 @@ class NestedScopePage extends GetView<NestedScopeController> {
     );
   }
 
-  Widget _buildIsolatedCounter(NestedScopeController controller, ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildIsolatedCounter(
+    NestedScopeController controller,
+    ThemeData theme,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+        ),
       ),
       child: Column(
         children: [
@@ -68,7 +83,11 @@ class NestedScopePage extends GetView<NestedScopeController> {
               // instanceId는 String(non-Rx)이므로 .tr과 함께 Obx 불필요
               Text(
                 'nested_scope_id_label'.trParams({'id': controller.instanceId}),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, fontFamily: 'monospace'),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  fontFamily: 'monospace',
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -77,10 +96,18 @@ class NestedScopePage extends GetView<NestedScopeController> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 // controller.depth는 Rx이므로 Obx 유지
-                child: Obx(() => Text(
-                  'nested_scope_depth_badge'.trArgs([controller.depth.toString()]),
-                  style: const TextStyle(color: Colors.purpleAccent, fontSize: 11, fontWeight: FontWeight.bold),
-                )),
+                child: Obx(
+                  () => Text(
+                    'nested_scope_depth_badge'.trArgs([
+                      controller.depth.toString(),
+                    ]),
+                    style: const TextStyle(
+                      color: Colors.purpleAccent,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -109,7 +136,9 @@ class NestedScopePage extends GetView<NestedScopeController> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.purpleAccent,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               onPressed: controller.increment,
@@ -119,13 +148,19 @@ class NestedScopePage extends GetView<NestedScopeController> {
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildNavControls(BuildContext context, NestedScopeController controller, ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildNavControls(
+    BuildContext context,
+    NestedScopeController controller,
+    ThemeData theme,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Column(
       children: [
         SizedBox(
@@ -134,10 +169,13 @@ class NestedScopePage extends GetView<NestedScopeController> {
           child: OutlinedButton.icon(
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.purpleAccent, width: 1.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               foregroundColor: Colors.purpleAccent,
             ),
-            onPressed: () => context.push('/nested-scope?depth=${controller.depth + 1}'),
+            onPressed: () =>
+                context.push('/nested-scope?depth=${controller.depth + 1}'),
             icon: const Icon(Icons.keyboard_double_arrow_right_rounded),
             label: Text(
               'nested_scope_push_btn'.tr,
@@ -151,9 +189,7 @@ class NestedScopePage extends GetView<NestedScopeController> {
             width: double.infinity,
             height: 48,
             child: TextButton.icon(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.redAccent,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
               onPressed: () => context.pop(),
               icon: const Icon(Icons.close_rounded),
               label: Text(

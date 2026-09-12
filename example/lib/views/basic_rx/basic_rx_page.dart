@@ -47,13 +47,20 @@ class BasicRxPage extends GetView<BasicRxController> {
     );
   }
 
-  Widget _buildCounterCard(BasicRxController controller, ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildCounterCard(
+    BasicRxController controller,
+    ThemeData theme,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+        ),
       ),
       child: Column(
         children: [
@@ -62,17 +69,27 @@ class BasicRxPage extends GetView<BasicRxController> {
             children: [
               Text(
                 'basic_rx_counter_title'.tr,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   'basic_rx_obx_badge'.tr,
-                  style: TextStyle(color: primaryColor, fontSize: 11, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -96,7 +113,9 @@ class BasicRxPage extends GetView<BasicRxController> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: isDark ? Colors.black : Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               onPressed: controller.increment,
@@ -106,47 +125,61 @@ class BasicRxPage extends GetView<BasicRxController> {
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSearchCard(BasicRxController controller, ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildSearchCard(
+    BasicRxController controller,
+    ThemeData theme,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Obx(() => TextField(
-            onChanged: (val) => controller.searchQuery.value = val,
-            decoration: InputDecoration(
-              hintText: 'basic_rx_search_hint'.tr,
-              prefixIcon: const Icon(Icons.search_rounded),
-              filled: true,
-              fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: primaryColor, width: 1.5),
+          Obx(
+            () => TextField(
+              onChanged: (val) => controller.searchQuery.value = val,
+              decoration: InputDecoration(
+                hintText: 'basic_rx_search_hint'.tr,
+                prefixIcon: const Icon(Icons.search_rounded),
+                filled: true,
+                fillColor: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.03),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: primaryColor, width: 1.5),
+                ),
               ),
             ),
-          )),
+          ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'basic_rx_status_label'.tr,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
               Obx(() {
                 final status = controller.searchStatus.value;
@@ -155,12 +188,20 @@ class BasicRxPage extends GetView<BasicRxController> {
                 if (status == 'Success') statusColor = Colors.green;
 
                 String localizedStatus = 'basic_rx_status_idle'.tr;
-                if (status == 'Searching...') localizedStatus = 'basic_rx_status_searching'.tr;
-                if (status == 'Success') localizedStatus = 'basic_rx_status_success'.tr;
+                if (status == 'Searching...') {
+                  localizedStatus = 'basic_rx_status_searching'.tr;
+                }
+                if (status == 'Success') {
+                  localizedStatus = 'basic_rx_status_success'.tr;
+                }
 
                 return Text(
                   localizedStatus,
-                  style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 );
               }),
             ],
@@ -173,13 +214,12 @@ class BasicRxPage extends GetView<BasicRxController> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.02),
+                color: isDark
+                    ? Colors.black26
+                    : Colors.black.withValues(alpha: 0.02),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                result,
-                style: const TextStyle(fontSize: 12),
-              ),
+              child: Text(result, style: const TextStyle(fontSize: 12)),
             );
           }),
         ],
@@ -187,13 +227,20 @@ class BasicRxPage extends GetView<BasicRxController> {
     );
   }
 
-  Widget _buildRxListCard(BasicRxController controller, ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildRxListCard(
+    BasicRxController controller,
+    ThemeData theme,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,7 +250,7 @@ class BasicRxPage extends GetView<BasicRxController> {
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           ),
           const SizedBox(height: 16),
-          
+
           // Area to display the item list
           Obx(() {
             final items = controller.rxListItems;
@@ -213,42 +260,66 @@ class BasicRxPage extends GetView<BasicRxController> {
                 padding: const EdgeInsets.symmetric(vertical: 32),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.02),
+                  color: isDark
+                      ? Colors.black26
+                      : Colors.black.withValues(alpha: 0.02),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   'basic_rx_list_empty'.tr,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               );
             }
-            
+
             return Container(
               constraints: const BoxConstraints(maxHeight: 200),
               decoration: BoxDecoration(
-                color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.02),
+                color: isDark
+                    ? Colors.black26
+                    : Colors.black.withValues(alpha: 0.02),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white10
+                      : Colors.black.withValues(alpha: 0.03),
+                ),
               ),
               child: ListView.separated(
                 shrinkWrap: true,
                 padding: const EdgeInsets.all(8),
                 itemCount: items.length,
-                separatorBuilder: (_, _) => const Divider(height: 8, color: Colors.white10),
+                separatorBuilder: (_, _) =>
+                    const Divider(height: 8, color: Colors.white10),
                 itemBuilder: (context, index) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0,
+                      vertical: 2.0,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'basic_rx_list_item_prefix'.trArgs([items[index]]),
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, fontFamily: 'monospace'),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            fontFamily: 'monospace',
+                          ),
                         ),
                         IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
-                          icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.redAccent,
+                            size: 18,
+                          ),
                           onPressed: () => controller.removeRxItem(index),
                         ),
                       ],
@@ -258,9 +329,9 @@ class BasicRxPage extends GetView<BasicRxController> {
               ),
             );
           }),
-          
+
           const SizedBox(height: 16),
-          
+
           // Add Button
           SizedBox(
             width: double.infinity,
@@ -268,7 +339,9 @@ class BasicRxPage extends GetView<BasicRxController> {
             child: OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: primaryColor, width: 1.5),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 foregroundColor: primaryColor,
               ),
               onPressed: controller.addRxItem,

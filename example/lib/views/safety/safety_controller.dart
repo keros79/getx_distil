@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:getx_distil/get.dart';
 
-class SelfHealingSafetyController extends GetxController {
+class SafetyController extends GetxController {
   // 1. State for self-healing test
   final healingCount = 0.obs;
   final healingLogs = <String>[].obs;
@@ -25,19 +25,20 @@ class SelfHealingSafetyController extends GetxController {
 
   void simulateAsyncObxError() {
     resetAsyncError();
-    
+
     // Simulate FlutterError being thrown when async is used inside Obx
     try {
       // Throw and catch a mock error to simulate an async call breaking the reactive tracking chain inside Obx
       throw FlutterError(
         'GetX-Distil Error: Detected an async/await call inside an Obx builder callback!\n'
         'Using await inside Obx will break the reactive tracking chain because the reactive dependencies are evaluated synchronously.\n\n'
-        '👉 [Fix]: Calculate async values inside the controller, assign them to a synchronous Rx variable, and then let Obx synchronously display the Rx value.'
+        '👉 [Fix]: Calculate async values inside the controller, assign them to a synchronous Rx variable, and then let Obx synchronously display the Rx value.',
       );
     } catch (e) {
       asyncErrorCaught.value = true;
       errorStack.value = e.toString();
-      errorGuide.value = 'Make sure all Obx functions return synchronously and avoid any await within the builder callback.';
+      errorGuide.value =
+          'Make sure all Obx functions return synchronously and avoid any await within the builder callback.';
     }
   }
 

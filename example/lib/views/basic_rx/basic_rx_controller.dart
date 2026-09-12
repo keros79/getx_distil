@@ -9,7 +9,7 @@ class BasicRxController extends GetxController {
   final searchQuery = ''.obs;
   final searchStatus = 'Idle'.obs;
   final searchResult = ''.obs;
-  
+
   // 3. State for RxList add/remove testing
   final rxListItems = <String>[].obs;
   int _itemIndex = 0;
@@ -64,7 +64,10 @@ class BasicRxController extends GetxController {
     // Simulate search success after 1 second
     Timer(const Duration(seconds: 1), () {
       if (searchQuery.value == query) {
-        searchResult.value = 'basic_rx_search_result'.trArgs([query.toUpperCase(), DateTime.now().toString().substring(11, 19)]);
+        searchResult.value = 'basic_rx_search_result'.trArgs([
+          query.toUpperCase(),
+          DateTime.now().toString().substring(11, 19),
+        ]);
         searchStatus.value = 'Success';
         addLog('Search Finished for "$query"');
       }

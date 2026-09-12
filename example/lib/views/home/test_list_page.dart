@@ -140,7 +140,6 @@ class TestListPage extends GetView<TestListController> {
                   borderColor: Colors.pinkAccent.withValues(alpha: 0.4),
                 ),
               ],
-
             ),
           ),
         ),

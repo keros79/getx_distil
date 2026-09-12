@@ -541,6 +541,14 @@ await tester.pumpWidget(
 
 깊게 계층화된 파생 상태, 대규모 parameterized cache, provider 수준의 override와 invalidation workflow가 애플리케이션의 중심이라면 provider graph 아키텍처가 더 적합할 수 있습니다. `getx_distil`은 모든 provider 추상화를 모방해야 유용한 것이 아닙니다. Route·Feature의 ownership 문제를 직접 해결하는 데 목적이 있습니다.
 
+## 앱 아키텍처
+
+이 패키지를 쓰는 Flutter 앱의 Feature-First + MVVM 권장 구조는 example과 함께 있습니다.
+
+- [example/docs/architecture.md](example/docs/architecture.md)
+
+에이전트가 같은 규칙을 따르게 하려면 해당 파일을 앱 루트 `AGENTS.md`로 복사하세요.
+
 ## API 개요
 
 | 필요 사항 | API |

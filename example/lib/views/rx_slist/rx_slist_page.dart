@@ -73,10 +73,7 @@ class RxSListPage extends GetView<RxSListController> {
             // Status badge
             Obx(
               () => list.on(
-                idle: () => _StatusBadge(
-                  label: 'Idle',
-                  color: Colors.blueGrey,
-                ),
+                idle: () => _StatusBadge(label: 'Idle', color: Colors.blueGrey),
                 loading: () => _StatusBadge(
                   label: 'Initial (loading)',
                   color: Colors.orange,

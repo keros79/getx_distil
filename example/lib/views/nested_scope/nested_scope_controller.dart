@@ -17,12 +17,16 @@ class NestedScopeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    debugPrint('NestedScopeController [$instanceId] (Depth: $depth) initialized');
+    debugPrint(
+      'NestedScopeController [$instanceId] (Depth: $depth) initialized',
+    );
   }
 
   @override
   void onClose() {
-    debugPrint('NestedScopeController [$instanceId] (Depth: $depth) disposed (GC)');
+    debugPrint(
+      'NestedScopeController [$instanceId] (Depth: $depth) disposed (GC)',
+    );
     super.onClose();
   }
 }

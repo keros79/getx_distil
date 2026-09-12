@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:getx_distil/get.dart';
 import 'package:go_router/go_router.dart';
-import 'concurrent_update_controller.dart';
+import 'concurrent_controller.dart';
 
-class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
-  const ConcurrentUpdatePage({super.key});
+class ConcurrentPage extends GetView<ConcurrentController> {
+  const ConcurrentPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -43,13 +43,20 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
     );
   }
 
-  Widget _buildFifoCard(ConcurrentUpdateController controller, ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildFifoCard(
+    ConcurrentController controller,
+    ThemeData theme,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,15 +66,23 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
             children: [
               Text(
                 'concurrent_fifo_title'.tr,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
               ),
               // isProcessingFifo는 Rx → Obx 유지
               Obx(() {
                 final active = controller.isProcessingFifo.value;
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: active ? Colors.cyan.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.1),
+                    color: active
+                        ? Colors.cyan.withValues(alpha: 0.2)
+                        : Colors.grey.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -90,7 +105,9 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.cyan,
                 foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               onPressed: controller.triggerSequentialTask,
@@ -111,17 +128,26 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.02),
+                color: isDark
+                    ? Colors.black26
+                    : Colors.black.withValues(alpha: 0.02),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.sync_alt_rounded, color: Colors.cyanAccent, size: 16),
+                  const Icon(
+                    Icons.sync_alt_rounded,
+                    color: Colors.cyanAccent,
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       latestLog,
-                      style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                      ),
                     ),
                   ),
                 ],
@@ -133,13 +159,20 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
     );
   }
 
-  Widget _buildBenchmarkCard(ConcurrentUpdateController controller, ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildBenchmarkCard(
+    ConcurrentController controller,
+    ThemeData theme,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,7 +182,10 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
             children: [
               Text(
                 'concurrent_bench_title'.tr,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -159,7 +195,11 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                 ),
                 child: Text(
                   'concurrent_bench_items_badge'.tr,
-                  style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.amberAccent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -172,15 +212,22 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                   height: 44,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                      backgroundColor: isDark
+                          ? Colors.white10
+                          : Colors.black.withValues(alpha: 0.05),
                       foregroundColor: theme.colorScheme.onSurface,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       elevation: 0,
                     ),
                     onPressed: controller.runStandardListBenchmark,
                     child: Text(
                       'concurrent_standard_loop_btn'.tr,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -193,13 +240,18 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.cyan,
                       foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       elevation: 0,
                     ),
                     onPressed: controller.runRxListBenchmark,
                     child: Text(
                       'concurrent_rx_batch_btn'.tr,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -227,8 +279,21 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('concurrent_standard_label'.tr, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                        Text('${tStandard}ms', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                        Text(
+                          'concurrent_standard_label'.tr,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Text(
+                          '${tStandard}ms',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.redAccent,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -236,7 +301,9 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                       width: double.infinity,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03),
+                        color: isDark
+                            ? Colors.white10
+                            : Colors.black.withValues(alpha: 0.03),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: FractionallySizedBox(
@@ -261,8 +328,21 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('concurrent_rx_label'.tr, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                        Text('${tRx}ms', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.greenAccent)),
+                        Text(
+                          'concurrent_rx_label'.tr,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Text(
+                          '${tRx}ms',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.greenAccent,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -270,7 +350,9 @@ class ConcurrentUpdatePage extends GetView<ConcurrentUpdateController> {
                       width: double.infinity,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03),
+                        color: isDark
+                            ? Colors.white10
+                            : Colors.black.withValues(alpha: 0.03),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: FractionallySizedBox(

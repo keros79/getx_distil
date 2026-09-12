@@ -1,59 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:getx_distil/get.dart';
-import 'package:example/main.dart';
-import 'package:example/src/services/rest_api_service.dart';
-import 'package:example/src/views/tdd_test_controller.dart';
-import 'package:example/src/views/tdd_test_page.dart';
+import 'package:example/core/translations/app_translations.dart';
+import 'package:example/models/domain/user_entity.dart';
+import 'package:example/models/domain/user_repository.dart';
+import 'package:example/views/tdd_test/tdd_test_controller.dart';
+import 'package:example/views/tdd_test/tdd_test_page.dart';
 
-/// Mock API service returning instant mock data without network calls for test environments.
-class MockRestApiService implements RestApiService {
-  String stubbedValue = "Mocked User Data";
+/// Mock repository returning instant mock data without network calls.
+class MockUserRepository implements UserRepository {
+  UserEntity stubbedUser = const UserEntity(
+    id: 1,
+    name: 'Mocked User Data',
+    email: 'mock@example.com',
+  );
 
   @override
-  Future<String> fetchUserData() async {
-    // Returns mock value instantly without network latency
-    return stubbedValue;
-  }
+  Future<UserEntity> fetchUser() async => stubbedUser;
 }
 
-/// Mock API service throwing an exception to simulate network errors.
-class ErrorMockRestApiService implements RestApiService {
+/// Mock repository throwing an exception to simulate network errors.
+class ErrorMockUserRepository implements UserRepository {
   @override
-  Future<String> fetchUserData() async {
-    throw Exception("Network Error");
+  Future<UserEntity> fetchUser() async {
+    throw Exception('Network Error');
   }
 }
 
 void main() {
   group('TDD & Dependency Isolation using BindingWidget', () {
-    late MockRestApiService mockApiService;
+    late MockUserRepository mockRepository;
 
     setUp(() {
-      mockApiService = MockRestApiService();
-      // Reset global dependency injection state before each test
+      mockRepository = MockUserRepository();
+      // Reset global dependency injection state before each test.
       Get.reset();
-      // Initialize translation keys and default locale to prevent UI overflows and test localization
+      // Initialize translation keys and default locale.
       Get.addTranslations(AppTranslations().keys);
       Get.locale = const Locale('ko', 'KR');
     });
 
-    testWidgets('1. Verifies that data is successfully loaded and rendered on screen using MockRestApiService', (
+    testWidgets('1. Verifies data loads into RxS state via a mock repository', (
       WidgetTester tester,
     ) async {
-      mockApiService.stubbedValue = "TDD-driven widget verification success!";
+      mockRepository.stubbedUser = const UserEntity(
+        id: 1,
+        name: 'TDD-driven widget verification success!',
+        email: 'tdd@example.com',
+      );
 
       await tester.pumpWidget(
         MaterialApp(
-          // Use MaterialApp instead of GetMaterialApp for lightweight unit/widget testing.
-          // Pass the mock bindings locally using BindingWidget.
           home: BindingWidget(
             bindings: [
-              // (Important) Bind MockRestApiService to RestApiService
-              Bind<RestApiService>(() => mockApiService),
-              // Bind controller
+              // Override the production repository with the mock.
+              Bind<UserRepository>(() => mockRepository),
+              // Bind the controller with the same pattern the router uses.
               Bind<TddTestController>(
-                () => TddTestController(),
+                () => TddTestController(repository: Get.find<UserRepository>()),
               ),
             ],
             child: const TddTestPage(),
@@ -61,45 +65,47 @@ void main() {
         ),
       );
 
-      // Step 1: Ensure loading indicator is rendered during the initial async fetch call
+      // Loading indicator is shown while the future is pending.
       expect(find.byKey(const Key('loading_indicator')), findsOneWidget);
 
-      // Pump 1st frame to complete the asynchronous future (fetchUserData)
+      // 1st pump completes the future, 2nd pump rebuilds the leaf Obx.
       await tester.pump();
-      // Pump 2nd frame to trigger the UI rebuild (Obx) after state change
       await tester.pump();
 
-      // Step 2: Verify that loading indicator disappears and mock data is rendered
+      // Data rendered by the RxS loaded state.
       expect(find.byKey(const Key('loading_indicator')), findsNothing);
-      expect(find.text('TDD-driven widget verification success!'), findsOneWidget);
-    });
-
-    testWidgets('2. Verifies that error text is rendered correctly when API service throws an exception', (
-      WidgetTester tester,
-    ) async {
-      final errorApiService = ErrorMockRestApiService();
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: BindingWidget(
-            bindings: [
-              Bind<RestApiService>(() => errorApiService),
-              Bind<TddTestController>(
-                () => TddTestController(),
-              ),
-            ],
-            child: const TddTestPage(),
-          ),
-        ),
+      expect(
+        find.text('TDD-driven widget verification success! (tdd@example.com)'),
+        findsOneWidget,
       );
-
-      // Pump 1st frame to throw and process the async exception
-      await tester.pump();
-      // Pump 2nd frame to render the error layout (Obx)
-      await tester.pump();
-
-      // Verify that the exception message is caught and rendered in the text widget
-      expect(find.text('에러 발생: Network Error'), findsOneWidget);
     });
+
+    testWidgets(
+      '2. Verifies the error state renders when the repository throws',
+      (WidgetTester tester) async {
+        final errorRepository = ErrorMockUserRepository();
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: BindingWidget(
+              bindings: [
+                Bind<UserRepository>(() => errorRepository),
+                Bind<TddTestController>(
+                  () =>
+                      TddTestController(repository: Get.find<UserRepository>()),
+                ),
+              ],
+              child: const TddTestPage(),
+            ),
+          ),
+        );
+
+        await tester.pump();
+        await tester.pump();
+
+        // RxS exposes the captured error message in the error state.
+        expect(find.text('에러 발생: Network Error'), findsOneWidget);
+      },
+    );
   });
 }

@@ -2,33 +2,36 @@ import 'dart:async';
 import 'dart:math';
 import 'package:getx_distil/get.dart';
 
-class ConcurrentUpdateController extends GetxController {
+class ConcurrentController extends GetxController {
   // 1. FIFO Sequential Pipeline State
-  final fifoQueue = <String>[].obs;       // Queue log for waiting and completed tasks
-  final isProcessingFifo = false.obs;     // Flag indicating if sequential processing is active
+  final fifoQueue = <String>[].obs; // Queue log for waiting and completed tasks
+  final isProcessingFifo =
+      false.obs; // Flag indicating if sequential processing is active
   int _requestCounter = 0;
-  
+
   // Task list for getx_distil sequential processing
   final List<Future<void> Function()> _taskQueue = [];
 
   // 2. RxList bulk loop benchmark state
   final benchmarkItems = <int>[].obs;
-  final standardListBuildTime = 0.obs;    // Elapsed time for non-optimized mode (ms)
-  final rxListBuildTime = 0.obs;          // Elapsed time for RxList optimization mode (ms)
+  final standardListBuildTime =
+      0.obs; // Elapsed time for non-optimized mode (ms)
+  final rxListBuildTime =
+      0.obs; // Elapsed time for RxList optimization mode (ms)
   final benchmarkStatus = 'Idle'.obs;
 
   // ─── 1. FIFO Sequential Pipeline Implementation ──────────────────────────────
-  
+
   /// Custom Sequential Queue that executes async tasks sequentially (modeling updateSequential)
   void triggerSequentialTask() {
     _requestCounter++;
     final requestId = _requestCounter;
-    
+
     // Add a random delay (e.g. 500ms ~ 1500ms)
     final delayMs = 500 + Random().nextInt(1000);
-    
+
     _addFifoLog('Req #$requestId requested (Simulated Delay: ${delayMs}ms)');
-    
+
     // Enqueue async operation in the sequential queue
     _enqueueTask(() async {
       _addFifoLog('▶ Req #$requestId processing starts...');
@@ -51,7 +54,7 @@ class ConcurrentUpdateController extends GetxController {
 
     isProcessingFifo.value = true;
     final currentTask = _taskQueue.removeAt(0);
-    
+
     try {
       await currentTask();
     } finally {
@@ -75,22 +78,22 @@ class ConcurrentUpdateController extends GetxController {
   }
 
   // ─── 2. RxList Bulk Loop Update Benchmark ──────────────────────────────
-  
+
   /// Simulation of standard list updates without optimization
   /// Excessive UI rebuild requests per loop, causing slow down
   Future<void> runStandardListBenchmark() async {
     benchmarkStatus.value = 'Running Standard Loop (1,000 updates)...';
     benchmarkItems.clear();
-    
+
     final stopwatch = Stopwatch()..start();
-    
+
     // Simulate a performance bottleneck by notifying state changes individually over 1,000 iterations
     for (int i = 0; i < 1000; i++) {
       benchmarkItems.add(i);
       // Force layout render loop and listener call delay
-      await Future.delayed(Duration.zero); 
+      await Future.delayed(Duration.zero);
     }
-    
+
     stopwatch.stop();
     standardListBuildTime.value = stopwatch.elapsedMilliseconds;
     benchmarkStatus.value = 'Standard Loop Finished';

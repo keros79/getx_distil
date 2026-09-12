@@ -58,13 +58,19 @@ class TddTestPage extends GetView<TddTestController> {
               Expanded(
                 child: Text(
                   'tdd_test_status_label'.tr,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -83,29 +89,50 @@ class TddTestPage extends GetView<TddTestController> {
 
           const SizedBox(height: 24),
           Center(
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return const Padding(
+            child: Obx(
+              () => controller.user.on(
+                idle: () => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    'tdd_test_status_label'.tr,
+                    style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                loading: () => const Padding(
                   padding: EdgeInsets.symmetric(vertical: 20),
                   child: CircularProgressIndicator(
                     key: Key('loading_indicator'),
                   ),
-                );
-              }
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Text(
-                  controller.userData.value,
-                  key: const Key('result_text'),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                  textAlign: TextAlign.center,
                 ),
-              );
-            }),
+                loaded: (data) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    data ?? '',
+                    key: const Key('result_text'),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                error: (msg) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    msg ?? 'Error',
+                    key: const Key('error_text'),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.redAccent,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 24),
           SizedBox(
@@ -120,7 +147,7 @@ class TddTestPage extends GetView<TddTestController> {
                 ),
                 elevation: 0,
               ),
-              onPressed: controller.loadUserData,
+              onPressed: controller.loadUser,
               icon: const Icon(Icons.refresh_rounded),
               label: Text(
                 'tdd_test_refresh_btn'.tr,
@@ -152,14 +179,21 @@ class TddTestPage extends GetView<TddTestController> {
               const SizedBox(width: 8),
               Text(
                 'tdd_explain_title'.tr,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
           Text(
             'tdd_explain_desc'.tr,
-            style: const TextStyle(fontSize: 13, height: 1.5, color: Colors.grey),
+            style: const TextStyle(
+              fontSize: 13,
+              height: 1.5,
+              color: Colors.grey,
+            ),
           ),
         ],
       ),

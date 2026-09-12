@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:getx_distil/get.dart';
 import 'package:go_router/go_router.dart';
-import 'self_healing_safety_controller.dart';
+import 'safety_controller.dart';
 
-class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
-  const SelfHealingSafetyPage({super.key});
+class SafetyPage extends GetView<SafetyController> {
+  const SafetyPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,12 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
                 const SizedBox(height: 20),
 
                 // 2. Strict Async Obx Validation Card
-                _buildAsyncValidationCard(controller, theme, isDark, primaryColor),
+                _buildAsyncValidationCard(
+                  controller,
+                  theme,
+                  isDark,
+                  primaryColor,
+                ),
               ],
             ),
           ),
@@ -43,13 +48,20 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
     );
   }
 
-  Widget _buildSelfHealingCard(SelfHealingSafetyController controller, ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildSelfHealingCard(
+    SafetyController controller,
+    ThemeData theme,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,11 +83,18 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
               ),
               child: Column(
                 children: [
-                  Text('safety_healed_val_label'.tr, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  Text(
+                    'safety_healed_val_label'.tr,
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     '$val',
-                    style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.greenAccent),
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.greenAccent,
+                    ),
                   ),
                 ],
               ),
@@ -89,7 +108,9 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               onPressed: controller.triggerBuildMutation,
@@ -105,13 +126,20 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
     );
   }
 
-  Widget _buildAsyncValidationCard(SelfHealingSafetyController controller, ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildAsyncValidationCard(
+    SafetyController controller,
+    ThemeData theme,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,7 +156,9 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.redAccent,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               onPressed: controller.simulateAsyncObxError,
@@ -149,18 +179,28 @@ class SelfHealingSafetyPage extends GetView<SelfHealingSafetyController> {
               decoration: BoxDecoration(
                 color: Colors.red.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: Colors.redAccent.withValues(alpha: 0.2),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 16),
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.redAccent,
+                        size: 16,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         'safety_error_caught_label'.tr,
-                        style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),

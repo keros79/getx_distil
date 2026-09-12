@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:getx_distil/get.dart';
-import '../config/app_config.dart';
+import '../../core/config/app_config.dart';
 
 class TestListController extends GetxController {
   late final AppConfig _appConfig;
@@ -15,8 +15,7 @@ class TestListController extends GetxController {
   bool get isKorean => (Get.locale?.languageCode ?? 'ko') == 'ko';
 
   void toggleLocale() {
-    Get.locale =
-        isKorean ? const Locale('en', 'US') : const Locale('ko', 'KR');
+    Get.locale = isKorean ? const Locale('en', 'US') : const Locale('ko', 'KR');
   }
 
   // ── Theme ────────────────────────────────────────────────

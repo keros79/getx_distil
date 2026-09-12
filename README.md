@@ -541,6 +541,14 @@ Each test can create its own scope and dispose it with the widget tree. Global d
 
 A provider-graph architecture may be a better fit when your application is dominated by deeply layered derived state, large parameterized caches, or extensive provider-level override and invalidation workflows. `getx_distil` does not need to imitate every provider abstraction to be useful; it solves the route/feature ownership problem directly.
 
+## App architecture
+
+A Feature-First + MVVM layout for apps that use this package lives with the example:
+
+- [example/docs/architecture.md](example/docs/architecture.md)
+
+Copy that file to your Flutter app's `AGENTS.md` if you want an AI agent to follow the same screen/scope/DI rules.
+
 ## API overview
 
 | Need | API |
