@@ -24,7 +24,7 @@ Thumbs.db
 !.vscode/launch.json
 
 # Agent / local working docs (package root only — example/docs is published)
-AGENTS.md
+/AGENTS.md
 /docs/
 
 # Flutter/Dart/Pub related
