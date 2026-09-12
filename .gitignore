@@ -23,6 +23,10 @@ Thumbs.db
 .vscode/*
 !.vscode/launch.json
 
+# Agent / local working docs (not published)
+AGENTS.md
+docs/
+
 # Flutter/Dart/Pub related
 # Libraries should not include pubspec.lock, per https://dart.dev/guides/libraries/private-files#pubspeclock.
 /pubspec.lock

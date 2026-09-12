@@ -1,5 +1,5 @@
-# Cline context exclusions (gitignore syntax).
-# Reduces auto-context / tool reads. Explicit @-mentions can still attach a file.
+# Agent context exclusions (gitignore syntax).
+# Keeps indexing / auto-reads off heavy or irrelevant paths.
 # Source of truth: AGENTS.md. Spec lookup: docs/spec/INDEX.md.
 
 # Flutter / Dart generated
