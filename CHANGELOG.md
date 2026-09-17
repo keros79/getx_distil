@@ -1,3 +1,7 @@
+## 1.4.4
+
+* **Documentation**: Rewrote the README pitch in both `README.md` and `README.ko.md` so the package is not framed as a thin GetX fork. Opening and Why sections now lead with widget-tree ownership, `WeakReference` lookup / zombie-safe teardown, collection microtask batching, and the `Notifier.isTracking` read fast-path.
+
 ## 1.4.3
 
 * **Jaspr Port Pointer**: Linked [`jaspr_getx_distil`](https://github.com/keros79/jaspr_getx_distil) from both `README.md` and `README.ko.md` — the same contracts ported to the Jaspr `Component` tree.

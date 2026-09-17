@@ -2,7 +2,11 @@
 
 **Flutter를 위한 간결한 반응형 상태관리 및 하이브리드 의존성 주입(DI) 아키텍처입니다.**
 
-`getx_distil`은 GetX를 생산적으로 만들었던 개발자 경험인 `.obs`, `Obx`, `Get.find`, Worker, Controller를 유지하면서, **기능의 소유권, 위젯 트리의 수명, 의존성의 scope를 명확하게 표현**하도록 설계되었습니다.
+`getx_distil`은 GetX를 생산적으로 만들었던 개발자 경험인 `.obs`, `Obx`, `Get.find`, Worker, Controller를 유지합니다. 기존 습관은 그대로 가져오고, 이 패키지가 다르게 설계한 내부는 다음 세 가지입니다.
+
+- **소유권** — 기능의 View, Controller, 의존성, 수명을 한 경계에서 선언합니다.
+- **메모리** — 화면 소유 객체는 위젯 트리가 강하게 소유하고, 조회 테이블은 `WeakReference`만 가집니다. unmount가 dispose입니다.
+- **성능** — `Obx`는 읽은 값만 다시 그리며, 한 이벤트 루프의 컬렉션 변경은 알림 1회로 합칩니다.
 
 이 라이브러리는 다음과 같은 실무 질문에서 출발합니다.
 
@@ -18,7 +22,7 @@ Route / Feature
  └─ Lifetime
 ```
 
-앱 전체에서 사용하는 서비스는 전역으로 유지하고, 화면 전용 Controller는 위젯 트리에 scope할 수 있습니다. 애플리케이션 전체에 하나의 수명 관리 모델만 강제하지 않습니다.
+앱 전체에서 사용하는 서비스는 전역으로 유지합니다. 화면 전용 Controller는 위젯 트리에 scope되고, 해당 트리가 unmount되면 함께 정리됩니다. 애플리케이션 전체에 하나의 수명 관리 모델만 강제하지 않으며, 화면마다 짝이 되는 `Get.delete()`를 기억할 필요도 없습니다.
 
 > **[Jaspr?]** [`jaspr_getx_distil`](https://github.com/keros79/jaspr_getx_distil)을 사용하세요 — 같은 계약을 Jaspr `Component` 트리로 포팅한 버전입니다.
 
@@ -69,7 +73,47 @@ Feature or screen lifetime
 
 이는 전역 DI에서 scoped DI로 강제 전환하는 구조가 아닙니다. 두 lifetime 모델을 실제 객체의 수명에 맞춰 함께 사용하는 **하이브리드 DI 아키텍처**입니다.
 
-### 3. 상태 코드를 작고 직접적으로 유지합니다
+### 3. 화면 객체는 위젯 트리가 소유하고, 조회는 약한 참조로 합니다
+
+전역 strong registry는 누군가 `Get.delete()`를 기억해야만 화면 Controller를 잊습니다. `getx_distil`은 소유와 조회를 나눕니다.
+
+```text
+Mounted BindingWidget
+  strong map     ── owns ──► Controller
+  weak registry  ── sees ──► Controller   (context 없는 Get.find)
+
+Unmount
+  onClose()
+  weak 항목 해제
+  strong map 비움
+  → find가 zombie를 반환하지 않음
+  → GC가 인스턴스를 회수할 수 있음
+```
+
+- 화면이 mount되어 있는 동안 `BindingWidget`이 강한 소유자입니다.
+- context 없는 scoped 조회는 `WeakReference`를 사용하므로, 정적 테이블이 인스턴스를 붙잡아 두지 않습니다.
+- `BindingWidget.dispose()`가 약한 참조를 명시적으로 해제합니다. `Get.find`는 GC를 기다리지 않으므로, 이미 dispose된 Controller가 live 객체로 반환되지 않습니다.
+- `GetView`는 `BuildContext`를 `Expando`에 저장하고, `update`/`unmount`에서 이전 widget 항목을 지웁니다. 교체된 element가 그 맵을 통해 누수되지 않습니다.
+
+이는 “컨테이너가 모든 참조 순환을 자동으로 끊는다”는 주장이 아닙니다. 앱이 Controller를 전역 callback, timer, static collection에 직접 넣으면 그 참조는 여전히 객체를 살립니다. 구조적 보장은 **DI 테이블이 그 참조가 아니라는 점**입니다.
+
+### 4. 대량 쓰기는 알림 1회, 읽기 추적은 `Obx`가 빌드 중일 때만
+
+`Obx`는 값을 읽은 위젯만 다시 그리며, 페이지 전체를 다시 그리지 않습니다. 컬렉션은 여기서 한 걸음 더 갑니다.
+
+```dart
+for (final item in incoming) {
+  items.add(item); // N번 쓰기, 알림 1회
+}
+```
+
+같은 이벤트 루프에서 동기적으로 일어난 `RxList` / `RxMap` / `RxSet` mutation은 dirty flag 하나와 microtask 하나를 공유합니다. 일반 primitive `Rx` 대입은 각각 알림되며, 값이 같으면 알림을 건너뜁니다.
+
+원소 읽기(`[]`, `length`, 순회)는 `Notifier.isTracking`을 확인합니다. `Obx` build 밖에서는 의존성을 등록하지 않으므로, 백그라운드 루프와 pipeline은 추적 오버헤드를 지지 않습니다.
+
+Flutter의 build/layout 단계에서 알림이 발생하면 updater는 post-frame callback으로 미뤄집니다.
+
+### 5. 상태 코드를 작고 직접적으로 유지합니다
 
 ```dart
 class CounterController extends GetxController {
@@ -96,7 +140,7 @@ count 변경 → count를 읽은 Obx만 rebuild
 
 이러한 낮은 보일러플레이트는 단순히 작성 편의성만 높이지 않습니다. 계층을 줄이면 팀이 상태의 소유권, 코드 리뷰 범위, 디버깅 경로를 더 쉽게 이해할 수 있습니다.
 
-### 4. 비동기 UI 상태를 하나의 상태 객체로 관리합니다
+### 6. 비동기 UI 상태를 하나의 상태 객체로 관리합니다
 
 `RxS`와 `RxSList`은 데이터와 일반적인 UI 상태를 함께 관리합니다. 데이터, loading, empty, error를 각각 별도의 Observable로 만들 필요가 없습니다.
 
@@ -121,7 +165,7 @@ idle → loading → loaded / empty
 
 ```yaml
 dependencies:
-  getx_distil: ^1.4.3
+  getx_distil: ^1.4.4
 ```
 
 그리고 패키지를 import합니다.
@@ -390,7 +434,11 @@ for (final item in incomingItems) {
 }
 ```
 
-이 기능은 대량 변경과 초기화에 유용합니다. 이 batching 최적화는 반응형 컬렉션에 적용되며, 일반 primitive Rx 대입은 각각 별도의 알림으로 관찰됩니다.
+dirty flag가 같은 이벤트 루프의 나머지 쓰기를 버립니다. 예약된 microtask는 `refresh()`와 `notifyStream()`을 한 번 호출한 뒤 플래그를 리셋합니다. no-op mutation(빈 리스트의 `clear()`, 중복 `Set.add`)은 플래그 자체를 올리지 않습니다.
+
+원소 읽기(`[]`, `length`, 순회)는 `Notifier.isTracking`을 확인하고, `Obx`가 빌드 중일 때만 의존성을 등록합니다. tracking scope 밖에서 컬렉션을 읽는 루프와 pipeline은 proxy 오버헤드를 지지 않습니다.
+
+이 batching은 반응형 컬렉션에 적용됩니다. 일반 primitive Rx 대입은 각각 관찰되며, 값이 같으면 쓰기를 건너뜁니다. `close()`는 listener와 dirty flag를 비워서, 이미 예약된 microtask가 dispose된 컬렉션을 다시 무장시키지 못하게 합니다.
 
 ## Worker와 Stream
 
@@ -465,7 +513,7 @@ await balance.updateSequential(
 
 `getx_distil`이 제공하는 구조적 보장은 더 구체적이며 실용적입니다.
 
-> **화면·기능 소유 dependency에는 명시적인 위젯 트리 owner가 있으며, scope teardown은 일반적인 strong reference를 제거하고 Controller lifecycle cleanup을 호출합니다.**
+> **화면·기능 소유 dependency에는 명시적인 위젯 트리 owner가 있습니다. 조회는 `WeakReference`를 사용합니다. scope teardown은 `onClose`를 실행하고, weak 항목을 해제한 뒤 strong map을 비워서, GC를 기다리는 동안 `Get.find`가 zombie를 반환하지 못하게 합니다.**
 
 의도된 lifetime이 아키텍처에 드러납니다.
 
@@ -480,7 +528,9 @@ Page BindingWidget
   → page-instance lifetime
 ```
 
-결과적으로 “모든 객체가 자동으로 garbage collection된다”는 의미는 아닙니다. 전역 registry에 의존하고 모든 화면 Controller마다 수동 삭제를 기억하는 대신, 개발자가 객체의 ownership boundary를 선택할 수 있다는 의미입니다.
+`GetView`는 `BuildContext`를 `Expando`에 저장합니다(맵이 widget을 붙잡지 않음). `update`와 `unmount`에서는 이전 widget 항목을 지웁니다.
+
+결과적으로 “모든 객체가 자동으로 garbage collection된다”는 의미는 아닙니다. 전역 strong registry에 의존하고 모든 화면 Controller마다 수동 삭제를 기억하는 대신, 개발자가 객체의 ownership boundary를 선택할 수 있다는 의미입니다.
 
 ## Build 단계 안전성과 `Obx` 검증
 
@@ -537,6 +587,8 @@ await tester.pumpWidget(
 - 직접적이고 간결한 `.obs`와 `Obx` 경험;
 - View–Controller–Dependency 관계의 가시성;
 - 하나의 앱에서 전역 service와 화면 scoped Controller를 함께 사용;
+- 위젯 트리 소유권과 `WeakReference` 조회 — 화면이 전역 strong map에 남지 않음;
+- 대량 쓰기를 위한 컬렉션 batching과 백그라운드 읽기를 위한 tracking fast-path;
 - 문자열 tag 없이 화면 인스턴스 격리;
 - loading/error/empty 상태 코드의 간결한 표현;
 - 명시적 invalidation이 더 적합한 경우의 `GetBuilder` 사용.
@@ -559,12 +611,13 @@ await tester.pumpWidget(
 | 반응형 Widget binding | `Obx` |
 | 명시적인 Controller rebuild | `GetBuilder`, `update(ids)` |
 | 화면·기능 scope | `BindingWidget`, `Bind<T>` |
+| 약한 scoped 조회 | `WeakReference` registry + 명시적 해제 |
 | 앱 전체 eager binding | `GetMaterialApp(bindings: ...)` |
 | 전역 또는 lazy DI | `Get.put`, `Get.lazyPut`, `Get.find` |
 | 이름이 있는 전역 등록 | `tag:` |
 | 상태 인지형 리스트 | `RxSList`, `.ops` |
 | 상태 인지형 단일 값 | `RxS` |
-| 컬렉션 batching | `RxList`, `RxMap`, `RxSet` |
+| 컬렉션 batching + 읽기 fast-path | `RxList`, `RxMap`, `RxSet`, `Notifier.isTracking` |
 | Side effect | `ever`, `everAll`, `once`, `debounce`, `interval` |
 | Stream 연동 | `bindStream` |
 | FIFO 비동기 mutation | `updateSequential` |

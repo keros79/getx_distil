@@ -2,7 +2,11 @@
 
 **A concise reactive state-management and hybrid dependency-injection architecture for Flutter.**
 
-`getx_distil` preserves the developer experience that made GetX productive—`.obs`, `Obx`, `Get.find`, workers, and controllers—while making **feature ownership, widget-tree lifetime, and dependency scope explicit**.
+`getx_distil` keeps the developer experience that made GetX productive—`.obs`, `Obx`, `Get.find`, workers, and controllers—so existing habits transfer. The internals this package distills are these three:
+
+- **Ownership** — a feature's View, Controller, dependencies, and lifetime are declared at one boundary.
+- **Memory** — the widget tree strongly owns screen objects; the lookup table keeps only `WeakReference`s. Unmount is dispose.
+- **Performance** — `Obx` rebuilds only what it read, and collection mutations in one event-loop turn become a single notification.
 
 It is designed around a practical Flutter question:
 
@@ -18,7 +22,7 @@ Route / Feature
  └─ Lifetime
 ```
 
-You can keep application-wide services globally available and scope screen-specific controllers to the widget tree. You do not have to choose one lifetime model for the whole application.
+Application-wide services stay global. Screen controllers are scoped to the widget tree and dropped when that tree unmounts. You do not have to choose one lifetime model for the whole application, and you do not need a matching `Get.delete()` for every screen.
 
 > **[Jaspr?]** Use [`jaspr_getx_distil`](https://github.com/keros79/jaspr_getx_distil) — the same contracts ported to the Jaspr `Component` tree.
 
@@ -69,7 +73,47 @@ Feature or screen lifetime
 
 This is a hybrid DI architecture, not a forced migration from global DI to scoped DI.
 
-### 3. Keep state code small and directly readable
+### 3. Own screen objects with the widget tree, look them up with weak references
+
+A global strong registry only forgets a screen controller when someone remembers `Get.delete()`. `getx_distil` splits ownership from lookup:
+
+```text
+Mounted BindingWidget
+  strong map     ── owns ──► Controller
+  weak registry  ── sees ──► Controller   (context-less Get.find)
+
+Unmount
+  onClose()
+  unregister weak entry
+  clear strong map
+  → find cannot return a zombie
+  → GC can collect the instance
+```
+
+- While the screen is mounted, `BindingWidget` is the strong owner.
+- Context-less scoped lookup uses `WeakReference`, so the static table does not keep instances alive.
+- `BindingWidget.dispose()` unregisters explicitly. `Get.find` does not wait for the garbage collector, so a disposed controller is not returned as a live object.
+- `GetView` stores `BuildContext` in an `Expando` and clears the previous widget on `update` and `unmount`, so replaced elements do not leak through that map.
+
+This is not “the container magically breaks every retain cycle.” If the app itself stores a controller in a global callback, timer, or static collection, that reference still keeps it alive. The structural guarantee is that **the DI table is not that retain**.
+
+### 4. Notify once for bulk writes, track reads only while `Obx` is building
+
+`Obx` rebuilds the widget that read a value, not the page around it. Collections go further:
+
+```dart
+for (final item in incoming) {
+  items.add(item); // N writes, 1 notification
+}
+```
+
+Synchronous `RxList` / `RxMap` / `RxSet` mutations in the same event-loop turn share one dirty flag and one microtask. Primitive `Rx` assignments still notify individually, with an equality guard that skips a no-op write.
+
+Element reads (`[]`, `length`, iteration) check `Notifier.isTracking`. Outside an `Obx` build, those reads do not register a dependency. Background loops and pipelines do not pay tracking overhead.
+
+If a notification lands during Flutter's build/layout phases, the updater is deferred to a post-frame callback.
+
+### 5. Keep state code small and directly readable
 
 ```dart
 class CounterController extends GetxController {
@@ -96,7 +140,7 @@ count changes → the Obx that read count rebuilds
 
 This low ceremony is not only convenient. Fewer layers can make state ownership, review, and debugging easier for teams that prefer explicit screen-oriented features.
 
-### 4. Treat asynchronous UI state as one state object
+### 6. Treat asynchronous UI state as one state object
 
 `RxS` and `RxSList` combine the data and its common UI status instead of requiring separate observables for data, loading, empty, and error states.
 
@@ -121,7 +165,7 @@ Add the package to `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  getx_distil: ^1.4.3
+  getx_distil: ^1.4.4
 ```
 
 Then import it:
@@ -390,7 +434,11 @@ for (final item in incomingItems) {
 }
 ```
 
-This is useful for bulk updates and initialization. The batching optimization applies to reactive collections; ordinary primitive Rx assignments remain individually observable.
+A dirty flag drops every extra write in the same event-loop turn. The queued microtask calls `refresh()` and `notifyStream()` once, then resets. No-op mutations (`clear()` on an empty list, a duplicate `Set.add`) skip the flag entirely.
+
+Element reads (`[]`, `length`, iteration) check `Notifier.isTracking` and register a dependency only while an `Obx` is building. Loops and pipelines that read collections outside a tracking scope pay no proxy overhead.
+
+This batching applies to reactive collections. Ordinary primitive Rx assignments remain individually observable, with an equality guard that skips a write when the value did not change. `close()` clears listeners and the dirty flag so a queued microtask cannot re-arm a disposed collection.
 
 ## Workers and streams
 
@@ -465,9 +513,9 @@ Errors are delivered to the awaiting caller. They can also be handled with `onEr
 
 Its structural guarantee is more specific and practical:
 
-> **Screen- and feature-owned dependencies have an explicit widget-tree owner, and the scope teardown removes the normal strong references and invokes controller lifecycle cleanup.**
+> **Screen- and feature-owned dependencies have an explicit widget-tree owner. Lookup uses `WeakReference`. Scope teardown runs `onClose`, unregisters the weak entries, and drops the strong map so `Get.find` cannot return a zombie while waiting for GC.**
 
-This makes the intended lifetime visible in the architecture:
+The intended lifetime is visible in the architecture:
 
 ```text
 GetMaterialApp bindings
@@ -480,7 +528,9 @@ Page BindingWidget
   → page-instance lifetime
 ```
 
-The result is not “all objects are automatically garbage-collected.” The result is that developers can choose an ownership boundary instead of relying on a global registry and remembering a matching manual deletion call for every screen controller.
+`GetView` stores `BuildContext` in an `Expando` (the map does not pin the widget) and clears the previous widget on `update` and `unmount`.
+
+The result is not “all objects are automatically garbage-collected.” The result is that developers can choose an ownership boundary instead of relying on a global strong registry and remembering a matching manual deletion call for every screen controller.
 
 ## Build-phase safety and `Obx` validation
 
@@ -537,6 +587,8 @@ Each test can create its own scope and dispose it with the widget tree. Global d
 - direct `.obs` and `Obx` ergonomics;
 - a visible View–Controller–Dependency relationship;
 - global services and screen-scoped controllers in the same application;
+- widget-tree ownership with `WeakReference` lookup, so screens do not stay in a global strong map;
+- collection batching and a tracking fast-path for bulk writes and background reads;
 - screen-instance isolation without string tags;
 - compact loading/error/empty state code;
 - imperative `GetBuilder` updates when explicit invalidation is preferable.
@@ -559,12 +611,13 @@ Copy that file to your Flutter app's `AGENTS.md` if you want an AI agent to foll
 | Reactive widget binding | `Obx` |
 | Explicit controller rebuild | `GetBuilder`, `update(ids)` |
 | Screen/feature scope | `BindingWidget`, `Bind<T>` |
+| Weak scoped lookup | `WeakReference` registry + explicit unregister |
 | App-wide eager bindings | `GetMaterialApp(bindings: ...)` |
 | Global or lazy DI | `Get.put`, `Get.lazyPut`, `Get.find` |
 | Named global registrations | `tag:` |
 | Status-aware list | `RxSList`, `.ops` |
 | Status-aware single value | `RxS` |
-| Collection batching | `RxList`, `RxMap`, `RxSet` |
+| Collection batching + read fast-path | `RxList`, `RxMap`, `RxSet`, `Notifier.isTracking` |
 | Side effects | `ever`, `everAll`, `once`, `debounce`, `interval` |
 | Stream integration | `bindStream` |
 | FIFO async mutation | `updateSequential` |
