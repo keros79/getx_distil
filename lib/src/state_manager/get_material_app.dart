@@ -15,6 +15,9 @@ class GetMaterialApp extends StatelessWidget {
   final Widget Function(BuildContext, Widget?)? builder;
   final Key? widgetKey;
   final List<Bind<dynamic>>? bindings;
+  final bool debugShowCheckedModeBanner;
+  final String title;
+  final GlobalKey<NavigatorState>? navigatorKey;
 
   GetMaterialApp({
     super.key,
@@ -31,6 +34,9 @@ class GetMaterialApp extends StatelessWidget {
     this.builder,
     this.widgetKey,
     this.bindings,
+    this.debugShowCheckedModeBanner = true,
+    this.title = '',
+    this.navigatorKey,
   }) {
     if (translations != null) {
       Get.addTranslations(translations!.keys);
@@ -71,6 +77,8 @@ class GetMaterialApp extends StatelessWidget {
           localizationsDelegates: localizationsDelegates,
           supportedLocales: supportedLocales ?? const <Locale>[Locale('en', 'US')],
           builder: builder,
+          title: title,
+          debugShowCheckedModeBanner: debugShowCheckedModeBanner,
         );
       } else {
         return MaterialApp(
@@ -83,6 +91,9 @@ class GetMaterialApp extends StatelessWidget {
           localizationsDelegates: localizationsDelegates,
           supportedLocales: supportedLocales ?? const <Locale>[Locale('en', 'US')],
           builder: builder,
+          title: title,
+          debugShowCheckedModeBanner: debugShowCheckedModeBanner,
+          navigatorKey: navigatorKey,
         );
       }
     });

@@ -985,6 +985,26 @@ void main() {
 
       expect(find.text('Brightness: dark'), findsOneWidget);
     });
+
+    testWidgets(
+      'GetMaterialApp passes debugShowCheckedModeBanner, title, and navigatorKey',
+      (WidgetTester tester) async {
+        final navKey = GlobalKey<NavigatorState>();
+        await tester.pumpWidget(
+          GetMaterialApp(
+            title: 'Test App Title',
+            debugShowCheckedModeBanner: false,
+            navigatorKey: navKey,
+            home: const SizedBox(),
+          ),
+        );
+
+        final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+        expect(materialApp.title, 'Test App Title');
+        expect(materialApp.debugShowCheckedModeBanner, isFalse);
+        expect(materialApp.navigatorKey, equals(navKey));
+      },
+    );
   });
 
   group('GetView Tests', () {
