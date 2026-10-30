@@ -1005,6 +1005,44 @@ void main() {
         expect(materialApp.navigatorKey, equals(navKey));
       },
     );
+
+    testWidgets(
+      'Get.isRegistered returns true for scoped dependencies in active BindingWidget',
+      (WidgetTester tester) async {
+        // Before mounting: not registered
+        expect(Get.isRegistered<CounterController>(), isFalse);
+
+        await tester.pumpWidget(
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: BindingWidget(
+              bindings: [Bind<CounterController>(() => CounterController())],
+              child: Builder(
+                builder: (context) {
+                  // Both context-aware and context-less should return true while mounted
+                  expect(Get.isRegistered<CounterController>(context: context), isTrue);
+                  expect(Get.isRegistered<CounterController>(), isTrue);
+
+                  // Guard clause pattern succeeds and resolves the controller
+                  if (Get.isRegistered<CounterController>()) {
+                    final ctrl = Get.find<CounterController>();
+                    expect(ctrl.count.value, 0);
+                  } else {
+                    fail('Get.isRegistered should have returned true');
+                  }
+
+                  return const Text('mounted');
+                },
+              ),
+            ),
+          ),
+        );
+
+        // After unmounting: should return false
+        await tester.pumpWidget(const SizedBox.shrink());
+        expect(Get.isRegistered<CounterController>(), isFalse);
+      },
+    );
   });
 
   group('GetView Tests', () {

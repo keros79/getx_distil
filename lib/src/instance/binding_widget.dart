@@ -101,6 +101,26 @@ class BindingWidgetState extends State<BindingWidget> {
     return findOrInitializeInActiveStates<T>();
   }
 
+  /// Checks if [T] is registered in any active BindingWidget scope
+  /// (either already instantiated in _weakRegistry or declared in _activeStates).
+  static bool hasScopedRegistration<T>() {
+    // 1. 이미 인스턴스화되어 약한 참조로 살아있는지 확인
+    final list = _weakRegistry[T];
+    if (list != null) {
+      list.removeWhere((ref) => ref.target == null);
+      if (list.isNotEmpty) {
+        return true;
+      }
+    }
+    // 2. 현재 위젯 트리에 마운트된 BindingWidget 스택에 Bind<T>가 선언되어 있는지 확인
+    for (final state in _activeStates.reversed) {
+      if (state.hasBinding<T>()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /// Falls back to active [BindingWidget] scopes that *declare* [T] but have
   /// not created it yet, and instantiates it there.
   ///

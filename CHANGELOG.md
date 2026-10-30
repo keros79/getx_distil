@@ -1,3 +1,7 @@
+## 1.4.6
+
+* **Scoped Dependency Detection in `Get.isRegistered`**: Enhanced `Get.isRegistered<T>` to inspect active `BindingWidget` scopes (`BindingWidgetState.hasScopedRegistration<T>()`), live weak instances, and ancestor widget trees (`BuildContext? context`). This resolves the asymmetry with `Get.find<T>()` and ensures guard clause patterns (`if (Get.isRegistered<T>()) { Get.find<T>(); }`) work seamlessly with scoped DI.
+
 ## 1.4.5
 
 * **`GetMaterialApp` Options**: Added `debugShowCheckedModeBanner` (default: `true`), `title` (default: `''`), and `navigatorKey` (`GlobalKey<NavigatorState>?`) parameters to `GetMaterialApp` for closer alignment with Flutter's standard `MaterialApp`.

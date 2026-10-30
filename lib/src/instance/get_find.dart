@@ -62,10 +62,54 @@ class Get {
     return tag == null ? type.toString() : '${type.toString()}#$tag';
   }
 
-  /// Checks if a dependency of type [T] is registered in the global registry
-  /// (instantiated **or** lazily prepared).
-  static bool isRegistered<T>({String? tag}) {
-    return _globalRegistry.containsKey(_getKey(T, tag));
+  /// Checks if a dependency of type [T] is registered.
+  ///
+  /// * When [tag] is provided, checks only the global registry under that tag.
+  /// * When [context] is provided, checks ancestor [BindingWidget] scopes first,
+  ///   then falls back to the global registry, immortals, and active scopes.
+  /// * Without [context] and [tag], checks the global registry, immortal
+  ///   services, and active [BindingWidget] scopes / live weak instances.
+  static bool isRegistered<T>({String? tag, BuildContext? context}) {
+    // tag가 있으면 scoped DI 대상이 아니므로 글로벌만 확인
+    if (tag != null) {
+      return _globalRegistry.containsKey(_getKey(T, tag));
+    }
+
+    // 0. context가 주어진 경우 위젯 트리 조상 BindingWidget 먼저 확인
+    if (context != null) {
+      if (BindingWidgetState.getImmortal<T>() != null) {
+        return true;
+      }
+      var found = false;
+      context.visitAncestorElements((element) {
+        if (element is InheritedElement && element.widget is InheritedBinding) {
+          final binding = element.widget as InheritedBinding;
+          if (binding.state.hasBinding<T>()) {
+            found = true;
+            return false;
+          }
+        }
+        return true;
+      });
+      if (found) return true;
+    }
+
+    // 1. [핵심] 활성화된 BindingWidget 스택 및 스코프 인스턴스 확인
+    if (BindingWidgetState.hasScopedRegistration<T>()) {
+      return true;
+    }
+
+    // 2. Immortal 서비스 확인
+    if (BindingWidgetState.getImmortal<T>() != null) {
+      return true;
+    }
+
+    // 3. 글로벌 레지스트리 확인
+    if (_globalRegistry.containsKey(_getKey(T, null))) {
+      return true;
+    }
+
+    return false;
   }
 
   /// Checks if a dependency of type [T] is registered lazily and has **not**
